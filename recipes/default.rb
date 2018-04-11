@@ -22,7 +22,7 @@ if node[:systemd] == "true"
 
   case node[:platform_family]
   when "rhel"
-    systemd_script = "/usr/lib/systemd/system/#{service_name}.service"    
+    systemd_script = "/usr/lib/systemd/system/#{service_name}.service"
   else # debian
     systemd_script = "/lib/systemd/system/#{service_name}.service"
   end
@@ -44,7 +44,7 @@ if node[:systemd] == "true"
   kagent_config service_name do
     action :systemd_reload
   end
-  
+
 else # sysv
 
   service "#{service_name}" do
@@ -52,7 +52,7 @@ else # sysv
     supports :restart => true, :start => true, :stop => true, :enable => true
     action :nothing
   end
-  
+
   template "/etc/init.d/#{service_name}" do
     source "#{service_name}.erb"
     owner "root"
@@ -67,7 +67,7 @@ end
   kagent_config do
     action :systemd_reload
   end
-  
+
 end
 
 private_ip = my_private_ip()
@@ -142,24 +142,24 @@ end
 
 # Default to hostname found in /etc/hosts, but allow user to override it.
 hostname = node['fqdn']
-if node["kagent"].attribute?("hostname") 
+if node["kagent"].attribute?("hostname")
  hostname = node["kagent"]["hostname"]
 end
 
 hops_dir=node['install']['dir']
-if node.attribute?("hops") && node["hops"].attribute?("dir") 
+if node.attribute?("hops") && node["hops"].attribute?("dir")
   hops_dir=node['hops']['dir'] + "/hadoop"
 end
-if hops_dir == "" 
+if hops_dir == ""
  # Guess that it is the default value
  hops_dir = node['install']['dir'] + "/hadoop"
 end
 
-                   
+
 #
 # use :create_if_missing, as if there is a failure during/after the csr.py program,
-# you will get a failure. csr.py adds a password entry to the [agent] section. 
-# The file will be created without the agent->pasword if it is re-run and the password will be lost. 
+# you will get a failure. csr.py adds a password entry to the [agent] section.
+# The file will be created without the agent->pasword if it is re-run and the password will be lost.
 #
 template "#{node["kagent"]["base_dir"]}/config.ini" do
   source "config.ini.erb"
@@ -177,13 +177,13 @@ template "#{node["kagent"]["base_dir"]}/config.ini" do
               :hops_dir => hops_dir,
               :agent_password => agent_password
             })
-if node["services"]["enabled"] == "true"  
+if node["services"]["enabled"] == "true"
   notifies :enable, "service[#{service_name}]"
 end
   notifies :restart, "service[#{service_name}]", :delayed
 end
 
-if node["kagent"]["test"] == false 
+if node["kagent"]["test"] == false
     kagent_keys "sign-certs" do
        action :csr
     end
@@ -200,7 +200,7 @@ when "rhel"
   # EOH
   #   only_if "test -f /etc/init.d/iptables && service iptables status"
   # end
-  
+
 end
 
 if node["kagent"]["allow_ssh_access"] == 'true'
@@ -209,9 +209,9 @@ if node["kagent"]["allow_ssh_access"] == 'true'
     cb_user "#{node["kagent"]["user"]}"
     cb_group "#{node["kagent"]["group"]}"
     cb_name "hopsworks"
-    cb_recipe "default"  
+    cb_recipe "default"
     action :get_publickey
-  end  
+  end
 end
 
 
@@ -233,5 +233,14 @@ if node["install"]["addhost"] == 'true'
      <%= node['kagent']['base_dir'] %>/bin/anaconda_sync.sh
    EOH
  end
-  
-end  
+
+end
+
+bash "reinstall_backports_functools" do
+  user 'root'
+  ignore_failure true
+  code <<-EOF
+    yes | pip uninstall backports.functools_lru_cache
+    yes | pip install backports.functools_lru_cache
+  EOF
+end
