@@ -97,3 +97,10 @@ active="airflow-worker"
 _start
 active="airflow-scheduler"
 _start
+
+
+
+echo -e ""
+echo -e "Status of all local services now:"
+sudo <%= node["kagent"]["base_dir"] %>/bin/status-all-local-services.sh 
+
