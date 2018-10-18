@@ -174,14 +174,7 @@ end
 
 # Default to hostname found in /etc/hosts, but allow user to override it.
 # First with DNS. Highest priority if user supplies the actual hostname
-hostname = node['hostname']  
-if node['kagent']['dns'].eql? "true"
-  hostname = node['fqdn']
-end
-
-if private_ip.eql? "127.0.0.1"
-  hostname="localhost"
-end  
+hostname = node['fqdn']  
 
 if node["kagent"].attribute?("hostname")
    if node["kagent"]["hostname"].empty? == false
@@ -204,6 +197,8 @@ if hops_dir == ""
  hops_dir = node['install']['dir'] + "/hadoop"
 end
 
+blacklisted_envs = node['kagent']['python_conda_versions'].split(",").map(&:strip)
+                   .map {|p| p.gsub(".", "") }.map {|p| "python" + p}.join(",")
 template "#{node["kagent"]["etc"]}/config.ini" do
   source "config.ini.erb"
   owner node["kagent"]["user"]
@@ -220,7 +215,8 @@ template "#{node["kagent"]["etc"]}/config.ini" do
               :hops_dir => hops_dir,
               :agent_password => agent_password,
               :kstore => "#{node["kagent"]["keystore_dir"]}/#{hostname}__kstore.jks",
-              :tstore => "#{node["kagent"]["keystore_dir"]}/#{hostname}__tstore.jks"
+              :tstore => "#{node["kagent"]["keystore_dir"]}/#{hostname}__tstore.jks",
+              :blacklisted_envs => blacklisted_envs
             })
   
 if node["services"]["enabled"] == "true"  

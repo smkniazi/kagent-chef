@@ -29,7 +29,6 @@ group-name = <%= node[:kagent][:group_name] %>
 hadoop-home = <%= @hops_dir %>/hadoop
 certs-dir = <%= node[:kagent][:certs_dir] %>
 certificate-file = <%= node[:kagent][:certs_dir] %>/pub.pem
-ca-file = <%= node[:kagent][:certs_dir] %>/ca_pub.pem
 key-file = <%= node[:kagent][:certs_dir] %>/priv.key
 server-keystore = <%= @kstore %>
 server-truststore = <%= @tstore %>
@@ -37,5 +36,5 @@ keystore-script = <%= node[:kagent][:base_dir] %>/keystore.sh
 state-store = <%= node[:kagent][:etc]%>/state_store
 password = <%= @agent_password %>
 conda-dir = <%= node[:conda][:home] %>
-conda-python-versions = <%= node[:tensorflow][:python_conda_versions] %>
+conda-envs-blacklist = <%= @blacklisted_envs %>
 conda-gc-interval = <%= node[:kagent][:conda_gc_interval] %>

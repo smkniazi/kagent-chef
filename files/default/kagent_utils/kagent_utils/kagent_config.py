@@ -54,7 +54,6 @@ class KConfig:
             self.agent_pidfile = self._config.get('agent', 'pid-file')
             self.network_interface = self._config.get('agent', 'network-interface')
             self.certificate_file = self._config.get('agent', 'certificate-file')
-            self.ca_file = self._config.get('agent', 'ca-file')
             self.key_file = self._config.get('agent', 'key-file')
             self.server_keystore = self._config.get('agent', 'server-keystore')
             self.server_truststore = self._config.get('agent', 'server-truststore')
@@ -69,7 +68,7 @@ class KConfig:
             self.state_store_location = self._config.get('agent', 'state-store')
             self.agent_password = self._config.get('agent', 'password')
             self.conda_dir = self._config.get('agent', 'conda-dir')
-            self.conda_python_versions = self._config.get('agent', 'conda-python-versions')
+            self.conda_envs_blacklist = self._config.get('agent', 'conda-envs-blacklist')
             self.conda_gc_interval = self._config.get('agent', 'conda-gc-interval')
 
             # TODO find public/private IP addresses
@@ -88,7 +87,7 @@ class KConfig:
                     self.hostname = socket.gethostbyaddr(self.eth0_ip)[0]
                 except socket.herror:
                     try:
-                        self.hostname = socket.gethostname()
+                        self.hostname = socket.getfqdn()
                     except socket.herror:
                         self.hostname = "localhost"
 
