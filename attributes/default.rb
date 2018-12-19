@@ -46,7 +46,7 @@ default["kagent"]["dashboard"]["password"]         = "admin"
 
 # Username/Password for the keystore
 
-default["hopsworks"]["0.7.0.0"]["password"]         = "adminpw"
+default["hopsworks"]["master"]["password"]         = "adminpw"
 
 # Agent's local certificate for SSL connections
 default["kagent"]["certificate_file"]              = "server.pem"
