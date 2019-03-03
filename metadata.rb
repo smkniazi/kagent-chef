@@ -153,10 +153,6 @@ attribute "kagent/python_conda_versions",
           :description => "CSV of python versions to be used as base environments for Anaconda",
           :type => "string"
 
-attribute "gateway_ips",
-          :description => "Gateway IPs for the cluster as a whole",
-          :type => "array"
-
 attribute "kagent/default/private_ips",
           :description => "Private ip addresses",
           :type => "array"
