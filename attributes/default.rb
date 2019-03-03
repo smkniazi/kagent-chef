@@ -51,9 +51,9 @@ default["kagent"]["max_log_size"]                  = "10000000"
 
 default["kagent"]["network"]["interface"]          = ""
 
-default["kagent"][:default][:public_ips]              = ['10.0.2.15']
-default["kagent"][:default][:private_ips]             = ['10.0.2.15']
-default["kagent"][:default][:gateway_ips]             = ['10.0.2.2']
+default["kagent"][:default][:public_ips]           = node["install"]["public_ips"].empty? ? ['10.0.2.15'] : node["install"]["public_ips"]  
+default["kagent"][:default][:private_ips]          = node["install"]["private_ips"].empty? ? ['10.0.2.15'] : node["install"]["private_ips"]
+default["kagent"][:default][:gateway_ips]          = ['10.0.2.2']
 
 # services file contains locally installed services
 
