@@ -74,7 +74,7 @@ default["kagent"]["dns"]                           = "false"
 
 default["public_ips"]                              = ['10.0.2.15']
 default["private_ips"]                             = ['10.0.2.15']
-default["gateway_ips"]                             = ['10.0.2.2']
+
 default["kagent"]["allow_ssh_access"]              = "false"
 
 node.default["download_url"]                       = "http://193.10.67.171/hops"
