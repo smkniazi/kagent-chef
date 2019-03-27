@@ -1,7 +1,7 @@
 include_attribute "conda"
 
 # hops-util-py version, when value is "master" install from git, when value is "0.6.0.0" do pip install hops==0.6.0.0
-default["kagent"]["hops-util-py-version"] = "0.9.0.0"
+default["kagent"]["hops-util-py-version"] = "0.9.1.0"
 
 # Default values for configuration parameters
 default["kagent"]["version"]                       = node["install"]["version"]
@@ -46,7 +46,7 @@ default["kagent"]["ca_app"]                        = "hopsworks-ca"
 # local settings for agent
 default["kagent"]["port"]                          = 8090
 default["kagent"]["heartbeat_interval"]            = 3
-default["kagent"]["watch_interval"]                = 2
+default["kagent"]["watch_interval"]                = "2s"
 default["kagent"]["pid_file"]                      = node["kagent"]["dir"] + "/kagent.pid"
 default["kagent"]["logging_level"]                 = "INFO"
 default["kagent"]["max_log_size"]                  = "10000000"
