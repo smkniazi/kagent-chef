@@ -92,12 +92,8 @@ end
 private_ip = my_private_ip()
 public_ip = my_public_ip()
 
-dashboard_endpoint = private_recipe_ip("hopsworks","default")  + ":8181" 
-if node.attribute? "hopsworks"
-  if node["hopsworks"].attribute? "https" and node["hopsworks"]['https'].attribute? ('port')
-    dashboard_endpoint = private_recipe_ip("hopsworks","default")  + ":" + node['hopsworks']['https']['port']
-  end
-end
+hopsworks_ip = private_recipe_ip("hopsworks","default")
+hopsworks_port = node['hopsworks']['https']['port']
 
 network_if = node["kagent"]["network"]["interface"]
 
