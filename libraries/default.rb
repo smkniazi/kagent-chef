@@ -99,15 +99,13 @@ module Kagent
 
     def exists_local(cookbook, recipe)
       my_ip = my_private_ip()
-      begin
-        service_ips = private_recipe_ips(cookbook,recipe)
-      rescue
-        # Handle the case in which a recipe does not exists
+      service_ips = private_recipe_ips(cookbook,recipe)
+
+      if service_ips.nil?
         return false
       end
 
       found = false
-
       for host in service_ips
         if my_ip.eql? host
           found = true
