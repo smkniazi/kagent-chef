@@ -273,14 +273,13 @@ if node.attribute?("hops") && node["hops"].attribute?("dn") && node["hops"]["dn"
   hopsfs_datadirs=node['hops']['dn']['data_dir']
 end
 
-template  "#{node["kagent"]["home"]}/bin/zfs-create.sh" do
+template  "#{node['kagent']['home']}/bin/zfs-create.sh" do
   source "zfs-create.sh.erb"
   owner "root"
   group node["kagent"]["group"]
   mode 0750
   variables({
               :hopsfs_datadirs => hopsfs_datadirs
-            }
            })
 end
 
@@ -328,7 +327,6 @@ template "#{node["kagent"]["home"]}/bin/anaconda_env.sh" do
   action :create
   variables({
         :jupyter_python => jupyter_python
-#        :hadoop_version => hadoop_version
   })
 end
 
@@ -355,15 +353,14 @@ template "/etc/sudoers.d/kagent" do
   mode "0440"
   variables({
                 :user => node["kagent"]["user"],
-                :conda =>  "#{node["kagent"]["base_dir"]}/bin/conda.sh",
-                :anaconda =>  "#{node["kagent"]["base_dir"]}/bin/anaconda_env.sh",
+                :conda =>  "#{node['kagent']['base_dir']}/bin/conda.sh",
+                :anaconda =>  "#{node['kagent']['base_dir']}/bin/anaconda_env.sh",
                 :rotate_service_key => "#{node[:kagent][:certs_dir]}/run_csr.sh",
-                :gpu_kill => "#{node["kagent"]["base_dir"]}/bin/gpu-kill.sh",
-                :gpu_killhard => "#{node["kagent"]["base_dir"]}/bin/gpu-killhard.sh",
-                :systemctl_path => lazy { node['kagent']['systemctl_path'],
-                :zfs_create_key => "#{node["kagent"]["base_dir"]}/bin/zfs-create.sh",
-                :zfs_rotate_key => "#{node["kagent"]["base_dir"]}/bin/zfs-rotate.sh"
-                }
+                :gpu_kill => "#{node['kagent']['base_dir']}/bin/gpu-kill.sh",
+                :gpu_killhard => "#{node['kagent']['base_dir']}/bin/gpu-killhard.sh",
+                :systemctl_path => lazy { node['kagent']['systemctl_path'] },
+                :zfs_create_key => "#{node['kagent']['base_dir']}/bin/zfs-create.sh",
+                :zfs_rotate_key => "#{node['kagent']['base_dir']}/bin/zfs-rotate.sh"
               })
   action :create
 end  
