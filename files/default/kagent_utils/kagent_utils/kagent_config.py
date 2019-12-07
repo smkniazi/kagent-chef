@@ -82,8 +82,7 @@ class KConfig:
             self.private_ip = self._config.get('agent', 'private-ip')
 
 
-            self.zfs_volumes = self._config.get('agent', 'zfs-volumes')
-            self.zfs_date_last_key_rotation = self._config.get('agent', 'zfs-date-last-key-rotation')
+            self.zfs_datasets = self._config.get('agent', 'zfs-datasets')
             self.zfs_days_between_key_rotations = self._config.get('agent', 'zfs-days-between-key-rotations')
 
             
