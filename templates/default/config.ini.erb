@@ -35,3 +35,5 @@ password = <%= @agent_password %>
 conda-dir = <%= node[:conda][:home] %>
 conda-envs-blacklist = <%= @blacklisted_envs %>
 conda-gc-interval = <%= node[:kagent][:conda_gc_interval] %>
+zfs-datasets = <%= node[:zfs][:datasets] %>
+zfs-days-between-key-rotations = <%= node[:zfs][:days_between_key_rotations] %>

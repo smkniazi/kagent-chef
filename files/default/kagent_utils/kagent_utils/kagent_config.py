@@ -81,6 +81,12 @@ class KConfig:
             self.public_ip = self._config.get('agent', 'public-ip')
             self.private_ip = self._config.get('agent', 'private-ip')
 
+
+            self.zfs_volumes = self._config.get('agent', 'zfs-volumes')
+            self.zfs_date_last_key_rotation = self._config.get('agent', 'zfs-date-last-key-rotation')
+            self.zfs_days_between_key_rotations = self._config.get('agent', 'zfs-days-between-key-rotations')
+
+            
             if (self._config.has_option("agent", "hostname")):
                 self.hostname = self._config.get("agent", "hostname")
             else:

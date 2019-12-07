@@ -240,6 +240,13 @@ template "#{node["kagent"]["certs_dir"]}/run_csr.sh" do
   mode 0710
 end
 
+template "#{node["kagent"]["home"]}/run_csr.sh" do
+  source 'run_csr.sh.erb'
+  owner node['kagent']['user']
+  group node['kagent']['group']
+  mode 0710
+end
+
 
 ['start-agent.sh', 'stop-agent.sh', 'restart-agent.sh', 'get-pid.sh'].each do |script|
   Chef::Log.info "Installing #{script}"
@@ -251,7 +258,7 @@ end
   end
 end 
 
-['status-service.sh', 'gpu-kill.sh', 'gpu-killhard.sh'].each do |script|
+['status-service.sh', 'gpu-kill.sh', 'gpu-killhard.sh', 'zfs-rotate.sh'].each do |script|
   template  "#{node["kagent"]["home"]}/bin/#{script}" do
     source "#{script}.erb"
     owner "root"
@@ -259,6 +266,24 @@ end
     mode 0750
   end
 end
+
+
+hopsfs_datadirs=node['install']['dir'] + "/hopsdata"
+if node.attribute?("hops") && node["hops"].attribute?("dn") && node["hops"]["dn"].attribute?("data_dir")
+  hopsfs_datadirs=node['hops']['dn']['data_dir']
+end
+
+template  "#{node["kagent"]["home"]}/bin/zfs-create.sh" do
+  source "zfs-create.sh.erb"
+  owner "root"
+  group node["kagent"]["group"]
+  mode 0750
+  variables({
+              :hopsfs_datadirs => hopsfs_datadirs
+            }
+           })
+end
+
 
 
 # set_my_hostname
@@ -335,7 +360,10 @@ template "/etc/sudoers.d/kagent" do
                 :rotate_service_key => "#{node[:kagent][:certs_dir]}/run_csr.sh",
                 :gpu_kill => "#{node["kagent"]["base_dir"]}/bin/gpu-kill.sh",
                 :gpu_killhard => "#{node["kagent"]["base_dir"]}/bin/gpu-killhard.sh",
-                :systemctl_path => lazy { node['kagent']['systemctl_path'] }
+                :systemctl_path => lazy { node['kagent']['systemctl_path'],
+                :zfs_create_key => "#{node["kagent"]["base_dir"]}/bin/zfs-create.sh",
+                :zfs_rotate_key => "#{node["kagent"]["base_dir"]}/bin/zfs-rotate.sh"
+                }
               })
   action :create
 end  

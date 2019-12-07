@@ -187,6 +187,14 @@ blacklisted_envs = node['kagent']['python_conda_versions'].split(",").map(&:stri
 # hops-system anaconda env
 blacklisted_envs += ",hops-system,airflow"
 
+
+hopsfs_datadirs=node['install']['dir'] + "/hopsdata"
+if node.attribute?("hops") && node["hops"].attribute?("dn") && node["hops"]["dn"].attribute?("data_dir")
+  hopsfs_datadirs=node['hops']['dn']['data_dir']
+end
+
+
+
 template "#{node["kagent"]["etc"]}/config.ini" do
   source "config.ini.erb"
   owner node["kagent"]["user"]
@@ -204,6 +212,7 @@ template "#{node["kagent"]["etc"]}/config.ini" do
               :kstore => "#{node["kagent"]["keystore_dir"]}/#{hostname}__kstore.jks",
               :tstore => "#{node["kagent"]["keystore_dir"]}/#{hostname}__tstore.jks",
               :blacklisted_envs => blacklisted_envs
+#              :hopsfs_datadirs => hopsfs_datadirs
             })
 if node["services"]["enabled"] == "true"  
   notifies :enable, "service[#{service_name}]"

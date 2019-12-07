@@ -148,7 +148,8 @@ class Heartbeat():
         self._last_conda_report = long(time.mktime(datetime.now().timetuple()) * 1000)
         self._host_services = host_services
         self._recover = True
-            
+        self._zfskey = ""
+        
         while True:
             self.send()
             time.sleep(kconfig.heartbeat_interval)
@@ -222,6 +223,8 @@ class Heartbeat():
                 payload["agent-time"] = now
                 payload["services"] = services_list
                 payload["recover"] = self._recover
+                payload["zfskey"] = ""
+                payload["zfskey-rotate"] = ""
                 
                 now_in_ms = now * 1000
                 time_to_report = (now_in_ms - self._last_conda_report) > self._conda_report_interval
@@ -295,6 +298,8 @@ class Heartbeat():
                     logger.debug("Response from heartbeat is: {0}".format(theResponse))
                     self._recover = False
                     try:
+                        zfs_key = theResponse['zfskey']
+                        
                         system_commands = theResponse['system-commands']
                         for command in system_commands:
                             c = Command('SYSTEM_COMMAND', command)
@@ -832,6 +837,12 @@ if __name__ == '__main__':
     
     verbose = args.verbose
 
+    zfs_key = "request"
+    zfs_key_old_rotate = ""
+    zfs_check_heartbeats = 100
+    zfs_heartbeat_counter = 0
+
+    
     global kconfig
     kconfig = KConfig(args.config)
     kconfig.read_conf()

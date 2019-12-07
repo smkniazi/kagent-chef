@@ -6,3 +6,5 @@
 <%= @user %> ALL=NOPASSWD: <%= @systemctl_path %> start *
 <%= @user %> ALL=NOPASSWD: <%= @systemctl_path %> stop *
 <%= @user %> ALL=NOPASSWD: <%= @systemctl_path %> restart *
+<%= @user %> ALL=NOPASSWD: <%= @zfs_create_dataset %>
+<%= @user %> ALL=NOPASSWD: <%= @zfs_rotate_key %>
