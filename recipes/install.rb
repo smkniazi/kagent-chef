@@ -359,7 +359,7 @@ template "/etc/sudoers.d/kagent" do
                 :gpu_kill => "#{node['kagent']['base_dir']}/bin/gpu-kill.sh",
                 :gpu_killhard => "#{node['kagent']['base_dir']}/bin/gpu-killhard.sh",
                 :systemctl_path => lazy { node['kagent']['systemctl_path'] },
-                :zfs_create_key => "#{node['kagent']['base_dir']}/bin/zfs-create.sh",
+                :zfs_create_dataset => "#{node['kagent']['base_dir']}/bin/zfs-create.sh",
                 :zfs_rotate_key => "#{node['kagent']['base_dir']}/bin/zfs-rotate.sh"
               })
   action :create
