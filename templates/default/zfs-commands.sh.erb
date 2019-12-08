@@ -6,7 +6,7 @@
 
 function _help {
     echo "Helper script to run zfs commands"
-    echo "Usage: zfs-create.sh [ create | status | change-key | load-key | mount ] "
+    echo "Usage: zfs-create.sh [ create | mount | status | change-key ] "
 }
 
 
@@ -129,6 +129,39 @@ function _changekey {
     done
 }
 
+function _status {
+    x=0
+    for i in $(echo $DATASETS | sed "s/,/ /g")
+    do
+        zfs list $i
+        if [ $? -eq 0 ] ; then
+            keystatus=$(zfs get keystatus $i | tail -1 | awk '{ print $3 }')
+            if [ "$keystatus" != "available" ] ; then
+		zfs load-key -a -r -L keylocation=file:///${KEY_FILE} $i
+		if [ $? -ne 0 ] ; then
+		    echo "Could not load key for dataset: $i"
+		    exit 4
+		fi
+	    fi
+
+            mounted=$(zfs get mounted $i | tail -1 | awk '{ print $3 }')
+            if [ "$mounted" == "no" ] ; then  
+		zfs mount $i
+		if [ $? -ne 0 ] ; then
+		    exit 6
+		fi
+	    fi
+	else
+            echo "Dataset $i does not exist when you called 'status' on it."
+            exit 17
+	fi
+	((x++))   
+    done
+    echo "Status: all datasets seem ok and loaded"
+}
+
+
+
 if [ "$1" == "create" ] ; then
     if [ $# -ne 2 ]
     then
@@ -138,8 +171,9 @@ if [ "$1" == "create" ] ; then
     DATASETS=$2
     _create
 
-elif [ "$1" == "load-key" ] ; then
-    _loadkey
+elif [ "$1" == "mount" ] ; then
+    _load
+    _mount
 
 elif [ "$1" == "status" ] ; then   # returns one of:  empty, created, loaded
     _status
