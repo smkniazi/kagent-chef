@@ -5,6 +5,7 @@
 <%= @user %> ALL=NOPASSWD: <%= @gpu_killhard %>
 <%= @user %> ALL=NOPASSWD: <%= @zfs_create_dataset %>
 <%= @user %> ALL=NOPASSWD: <%= @zfs_rotate_key %>
+<%= @user %> ALL=NOPASSWD: <%= @zfs_check_mounts %>
 <%= @user %> ALL=NOPASSWD: <%= @systemctl_path %> start *
 <%= @user %> ALL=NOPASSWD: <%= @systemctl_path %> stop *
 <%= @user %> ALL=NOPASSWD: <%= @systemctl_path %> restart *

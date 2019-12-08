@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+
+function _help {
+    echo "Helper script to run zfs datasets create"
+    echo "Usage: zfs-create.sh passphrase"
+}
+
+set -e
+
+if [ $# -ne 1 ]
+then
+    _help
+    exit 2
+fi
+
+KEY_FILE=/dev/shm/zfs.key
+
+PASSPHRASE=$1
+DATASETS=<%= node['zfs']['datasets'] %>
+
+IFS=',' read -ra DIRS <<< "$DATADIRS"
+
+x=0
+for i in $(echo $DATASETS | sed "s/,/ /g")
+do	 
+    zfs key-status -o keyformat=passphrase -o keylocation=file:///${KEY_FILE} -o mountpoint=$DIRS[$x] $i    
+ ((x++))   
+done

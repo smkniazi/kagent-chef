@@ -258,7 +258,7 @@ end
   end
 end 
 
-['status-service.sh', 'gpu-kill.sh', 'gpu-killhard.sh', 'zfs-rotate.sh'].each do |script|
+['status-service.sh', 'gpu-kill.sh', 'gpu-killhard.sh', 'zfs-rotate.sh', 'zfs-check-mounts.sh'].each do |script|
   template  "#{node["kagent"]["home"]}/bin/#{script}" do
     source "#{script}.erb"
     owner "root"
@@ -360,6 +360,7 @@ template "/etc/sudoers.d/kagent" do
                 :gpu_killhard => "#{node['kagent']['base_dir']}/bin/gpu-killhard.sh",
                 :systemctl_path => lazy { node['kagent']['systemctl_path'] },
                 :zfs_create_dataset => "#{node['kagent']['base_dir']}/bin/zfs-create.sh",
+                :zfs_check_mounts => "#{node['kagent']['base_dir']}/bin/zfs-check-mounts.sh",                
                 :zfs_rotate_key => "#{node['kagent']['base_dir']}/bin/zfs-rotate.sh"
               })
   action :create

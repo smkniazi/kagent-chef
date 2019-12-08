@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+
+# Details on how to securely pass parameter from agent.py to this script:
+# https://unix.stackexchange.com/questions/188536/how-to-make-a-temporary-file-in-ram
+
 function _help {
     echo "Helper script to run zfs datasets create"
     echo "Usage: zfs-create.sh passphrase"
@@ -13,6 +17,7 @@ then
     exit 2
 fi
 
+KEY_FILE=/dev/shm/zfs.key
 PASSPHRASE=$1
 DATASETS=<%= node['zfs']['datasets'] %>
 # datasets are in the format "file:///disks/hdfs/1,file:///disks/hdfs/2, ..."
@@ -23,13 +28,6 @@ IFS=',' read -ra DIRS <<< "$DATADIRS"
 x=0
 for i in $(echo $DATASETS | sed "s/,/ /g")
 do	 
- /usr/bin/expect <<EOF
- EOF
-    spawn zfs create -o encryption=aes-128-gcm -o keyformat=passphrase -o keylocation=prompt -o mountpoint=$DIRS[$x] $i
-    expect "Enter passphrase: \r"
-    send "${PASSPHRASE}\r"
-    expect "Re-enter passphrase: \r"
-    send "${PASSPHRASE}\r"
- EOF
+ zfs create -o encryption=aes-128-gcm -o keyformat=passphrase -o keylocation=file:///${KEY_FILE} -o mountpoint=$DIRS[$x] $i
  ((x++))   
 done
