@@ -258,7 +258,7 @@ end
   end
 end 
 
-['status-service.sh', 'gpu-kill.sh', 'gpu-killhard.sh', 'zfs-rotate.sh', 'zfs-check-mounts.sh'].each do |script|
+['status-service.sh', 'gpu-kill.sh', 'gpu-killhard.sh'].each do |script|
   template  "#{node["kagent"]["home"]}/bin/#{script}" do
     source "#{script}.erb"
     owner "root"
@@ -273,8 +273,8 @@ if node.attribute?("hops") && node["hops"].attribute?("dn") && node["hops"]["dn"
   hopsfs_datadirs=node['hops']['dn']['data_dir']
 end
 
-template  "#{node['kagent']['home']}/bin/zfs-create.sh" do
-  source "zfs-create.sh.erb"
+template  "#{node['kagent']['home']}/bin/zfs-commands.sh" do
+  source "zfs-commands.sh.erb"
   owner "root"
   group node["kagent"]["group"]
   mode 0750
@@ -359,9 +359,7 @@ template "/etc/sudoers.d/kagent" do
                 :gpu_kill => "#{node['kagent']['base_dir']}/bin/gpu-kill.sh",
                 :gpu_killhard => "#{node['kagent']['base_dir']}/bin/gpu-killhard.sh",
                 :systemctl_path => lazy { node['kagent']['systemctl_path'] },
-                :zfs_create_dataset => "#{node['kagent']['base_dir']}/bin/zfs-create.sh",
-                :zfs_check_mounts => "#{node['kagent']['base_dir']}/bin/zfs-check-mounts.sh",                
-                :zfs_rotate_key => "#{node['kagent']['base_dir']}/bin/zfs-rotate.sh"
+                :zfs_commands => "#{node['kagent']['base_dir']}/bin/zfs-commands.sh"
               })
   action :create
 end  

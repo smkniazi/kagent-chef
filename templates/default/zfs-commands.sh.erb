@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+
+
+# Details on how to securely pass parameter from agent.py to this script:
+# https://unix.stackexchange.com/questions/188536/how-to-make-a-temporary-file-in-ram
+
+function _help {
+    echo "Helper script to run zfs commands"
+    echo "Usage: zfs-create.sh [ create | status | change-key | load-key | mount ] "
+}
+
+
+if [ $# -lt 1 ]
+then
+    _help
+    exit 2
+fi
+
+KEY_FILE=/dev/shm/zfs.key
+# datasets are in the format "file:///disks/hdfs/1,file:///disks/hdfs/2, ..."
+DN_DIRS=<%= @hopsfs_datadirs %>
+RES=
+VOLUME=
+DATASETS=
+
+
+trap "rm -f $KEY_FILE" EXIT
+
+trim() {
+    local var="$*"
+    # remove leading whitespace characters
+    var="${var#"${var%%[![:space:]]*}"}"
+    # remove trailing whitespace characters
+    var="${var%"${var##*[![:space:]]}"}"
+    echo -n "$var"
+}
+
+function _create {
+    IFS=',' read -r -a DIRS <<< "$DN_DIRS"
+    dn_len="${#DN_DIRS[@]}"
+    IFS=',' read -r -a dsets <<< "$DATASETS"    
+    dsets_len="${#dsets[@]}"
+
+    if [ "$dn_len" != "$dsets_len" ] ; then
+	echo "Error. The number of zfs datasets should be the same as the number of hopsfs datanode data_dirs"
+	exit 11
+    fi
+    
+    x=0
+    for i in $(echo $DATASETS | sed "s/,/ /g")
+    do
+	EXISTS=0
+	# cleanup the hopsfs datanode data_dir path
+	dn_dir = ${$DIRS[$x]#"file://"}   # strip of any leading 'file://'
+        dn_dir=$(trim $dn_dir)	 # trim off trailing and leading spaces
+
+	# Check if the dataset already exists
+        zfs list $i
+        if [ $? -eq 0 ] ; then
+
+	    # try and mount the existing dataset. If already mounted, it fails with an error msg, but that's ok.
+	    zfs mount -l $i
+
+    	    # check the mountpoint is the same as the datanode data_dir
+	    mountpoint=$(zfs get mountpoint $i | tail -1 | awk '{ print $3 }')
+	    if [ "$mountpoint" == "$dn_dir" ] ; then
+
+		# mountpoint is correct, check if its key is applied (it's unlocked)
+                keystatus=$(zfs get keystatus $i | tail -1 | awk '{ print $3 }')
+                if [ "$keystatus" != "available" ] ; then   #if 'available', the dataset is mounted and good.
+		    
+		    zfs load-key -L file://${KEY_FILE} $i # try and load the dataset using the key
+		    if [ $? -ne 0 ] ; then
+			echo "Could not unlock dataset $i with key file: $KEY_FILE"
+			exit 14
+		    fi
+		fi
+	    else
+		echo "Dataset $i exists already, but its mountpoint ( $mountpoint ) does not match the supplied mountpoint ( $dn_dir )"
+		exit 12
+	    fi
+	else # zfs dataset does not exist
+	    
+            zfs create -o encryption=aes-128-gcm -o keyformat=passphrase -o keylocation=file:///${KEY_FILE} -o mountpoint=$dn_dir $i
+	    if [ $? -ne 0 ] ; then
+	        echo "Could not create dataset: $i on mountpoint $dn_dir"
+	        exit 4
+            fi
+    
+	fi
+	((x++))   
+    done
+    
+}
+
+function _load {
+    for i in $(echo $DATASETS | sed "s/,/ /g")
+    do	 
+	zfs load-key -a -r -L keylocation=file:///${KEY_FILE} $i
+	if [ $? -ne 0 ] ; then
+	    echo "Could not load key for dataset: $i"
+	    exit 4
+	fi
+    done
+}
+
+
+function _mount {
+    _load
+    
+    for i in $(echo $DATASETS | sed "s/,/ /g")
+    do
+	zfs mount $i
+	if [ $? -ne 0 ] ; then
+	    echo "Could mount dataset: $i"
+	    exit 5
+	fi
+    done
+}
+
+function _changekey {
+    for i in $(echo $DATASETS | sed "s/,/ /g")
+    do	 
+	zfs change-key -l -o keyformat=passphrase -o keylocation=file:///${KEY_FILE} $i
+	if [ $? -ne 0 ] ; then
+	    echo "Could change key for dataset : $i"
+	    exit 6
+	fi
+    done
+}
+
+if [ "$1" == "create" ] ; then
+    if [ $# -ne 2 ]
+    then
+	_help
+	exit 2
+    fi
+    DATASETS=$2
+    _create
+
+elif [ "$1" == "load-key" ] ; then
+    _loadkey
+
+elif [ "$1" == "status" ] ; then   # returns one of:  empty, created, loaded
+    _status
+    if [ "$RES" == "empty" ] ; then
+    elif [ "$RES" == "created" ] ; then
+    elif [ "$RES" == "loaded" ] ; then
+	exit 0
+    else
+	exit 7
+    fi
+elif [ "$1" == "change-key" ] ; then    
+    _changekey
+else
+    echo "Invalid command: $1 . Valid commands are: create, status, changekey"
+    echo ""
+    exit 4
+fi    
+

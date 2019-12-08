@@ -175,6 +175,23 @@ class Host:
         json_response = json.loads(response.content)
         self._extract_crypto_material(json_response)
 
+
+    def _random_string(stringLength=10):
+        """Generate a random string with the combination of lowercase and uppercase letters """
+        letters = string.ascii_letters
+        return ''.join(random.choice(letters) for i in range(stringLength))
+        
+    def _zfs_create_dataset(self):
+        """Public method to create zfs dataset"""
+        try:
+            passwd=_random_string()
+            # write password to /dev/shm/zfs.passwd
+            with open('/dev/shm/zfs.passwd', 'w') as the_file:
+                    the_file.write(passwd)
+            subprocess.check_call(["sudo", config.zfs_script, "create", config.zfs_datasets])
+        except Exception, e:
+            LOG.error("Error while creating zfs dataset: {0}".format(e))
+            sys.exit(3)
         
     def register_host(self, session):
         """Public method to register a new host and sign its CSR"""
@@ -202,11 +219,14 @@ class Host:
         self.json_headers['Authorization'] = jwt
         response = session.delete(self._conf.ca_host_url, headers=self.json_headers, params=params)
         
-    def _register_host_internal(self, session):
+    def _register_host_internal(self, session, isZfs):
         self._login(session)
         payload = {}
         payload["password"] = self._conf.agent_password
         payload["host-id"] = self._conf.host_id
+        if isZfs == True:
+            zfs_key = self._create_zfs_dataset()
+            payload["zfskey"] = zfs_key
         self._LOG.info("Registering with Hopsworks")
         response = session.post(self._conf.register_url, headers=self.json_headers, data=json.dumps(payload), verify=False)
 
