@@ -268,7 +268,7 @@ end
 end
 
 
-hopsfs_datadirs=node['install']['dir'] + "/hopsdata"
+hopsfs_datadirs=node['install']['dir'] + "/hopsdata/hdfs/dn"
 if node.attribute?("hops") && node["hops"].attribute?("dn") && node["hops"]["dn"].attribute?("data_dir")
   hopsfs_datadirs=node['hops']['dn']['data_dir']
 end
