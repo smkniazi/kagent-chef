@@ -104,3 +104,11 @@ default["kagent"]["python_conda_versions"]         = "2.7, 3.6"
 default["zfs"]["days_between_key_rotations"]       = "10"
 # comma-separated list of zfs datasets that we will create encrypted
 default["zfs"]["datasets"]                            = ""  
+
+default["kagent"]["certs"]["root_ca"]                   = "#{node["kagent"]["certs_dir"]}/hops_ca.pem"
+default["kagent"]["certs"]["elastic_host_certificate"]  = "#{node["kagent"]["certs_dir"]}/elastic_host.pem"
+default["kagent"]["certs"]["host_key"]                  = "#{node["kagent"]["certs_dir"]}/priv.key"
+default["kagent"]["certs"]["elastic_admin_key"]         = "#{node["kagent"]["certs_dir"]}/elastic_admin.key"
+default["kagent"]["certs"]["elastic_admin_certificate"] = "#{node["kagent"]["certs_dir"]}/elastic_admin.pem"
+default["kagent"]["certs"]["elastic_admin_cn"]          = node['install']['localhost'].casecmp?("true") ? "ELkAdmin-localhost" : "ELkAdmin-#{node['fqdn']}"
+

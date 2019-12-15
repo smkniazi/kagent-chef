@@ -38,3 +38,7 @@ conda-gc-interval = <%= node[:kagent][:conda_gc_interval] %>
 zfs-script = <%= node[:kagent][:base_dir] %>/bin/zfs-commands.sh
 zfs-datasets = <%= node[:zfs][:datasets] %>
 zfs-days-between-key-rotations = <%= node[:zfs][:days_between_key_rotations] %>
+elk-key-file= <%= node[:kagent][:certs][:elastic_admin_key] %>
+elk-certificate-file= <%= node["kagent"]["certs"]["elastic_admin_certificate"] %>
+elk-cn= <%= node["kagent"]["certs"]["elastic_admin_cn"] %>
+
