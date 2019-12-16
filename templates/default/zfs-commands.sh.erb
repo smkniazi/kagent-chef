@@ -16,7 +16,7 @@ then
     exit 2
 fi
 
-KEY_FILE=/dev/shm/zfs.key
+KEY_FILE=/dev/shm/zfs.passwd
 # datasets are in the format "file:///disks/hdfs/1,file:///disks/hdfs/2, ..."
 DN_DIRS=<%= @hopsfs_datadirs %>
 RES=
@@ -24,7 +24,7 @@ VOLUME=
 DATASETS=
 
 
-trap "rm -f $KEY_FILE" EXIT
+#trap "rm -f $KEY_FILE" EXIT
 
 trim() {
     local var="$*"
@@ -51,15 +51,16 @@ function _create {
     do
 	EXISTS=0
 	# cleanup the hopsfs datanode data_dir path
-	dn_dir = ${$DIRS[$x]#"file://"}   # strip of any leading 'file://'
+        D=${DIRS[$x]}
+	dn_dir="${D/file:\/\//}   # strip of any leading 'file://'
         dn_dir=$(trim $dn_dir)	 # trim off trailing and leading spaces
-
+        echo "ZFS mount and unlock dataset : $i "
 	# Check if the dataset already exists
         zfs list $i
         if [ $? -eq 0 ] ; then
 
 	    # try and mount the existing dataset. If already mounted, it fails with an error msg, but that's ok.
-	    zfs mount -l $i
+	    sudo zfs mount -l $i
 
     	    # check the mountpoint is the same as the datanode data_dir
 	    mountpoint=$(zfs get mountpoint $i | tail -1 | awk '{ print $3 }')
@@ -69,19 +70,22 @@ function _create {
                 keystatus=$(zfs get keystatus $i | tail -1 | awk '{ print $3 }')
                 if [ "$keystatus" != "available" ] ; then   #if 'available', the dataset is mounted and good.
 		    
-		    zfs load-key -L file://${KEY_FILE} $i # try and load the dataset using the key
+		    sudo zfs load-key -L file://${KEY_FILE} $i # try and load the dataset using the key
 		    if [ $? -ne 0 ] ; then
 			echo "Could not unlock dataset $i with key file: $KEY_FILE"
 			exit 14
 		    fi
+                else
+                  echo "Keystatus is 'available'"
 		fi
 	    else
 		echo "Dataset $i exists already, but its mountpoint ( $mountpoint ) does not match the supplied mountpoint ( $dn_dir )"
 		exit 12
 	    fi
+            echo "ZFS dataset is already mounted and unlocked: $i"
 	else # zfs dataset does not exist
-	    
-            zfs create -o encryption=aes-128-gcm -o keyformat=passphrase -o keylocation=file:///${KEY_FILE} -o mountpoint=$dn_dir $i
+	    echo "key file is ${KEY_FILE}" 
+            sudo zfs create -o encryption=aes-128-gcm -o keyformat=passphrase -o keylocation=file:///${KEY_FILE} -o mountpoint=$dn_dir $i
 	    if [ $? -ne 0 ] ; then
 	        echo "Could not create dataset: $i on mountpoint $dn_dir"
 	        exit 4
@@ -177,9 +181,7 @@ elif [ "$1" == "mount" ] ; then
 
 elif [ "$1" == "status" ] ; then   # returns one of:  empty, created, loaded
     _status
-    if [ "$RES" == "empty" ] ; then
-    elif [ "$RES" == "created" ] ; then
-    elif [ "$RES" == "loaded" ] ; then
+    if [ "$RES" == "empty" ] || [ "$RES" == "created" ] || [ "$RES" == "loaded" ] ; then
 	exit 0
     else
 	exit 7

@@ -18,6 +18,7 @@ import requests
 import json
 import time
 import subprocess
+import string
 
 from OpenSSL import crypto
 from os.path import join, exists
@@ -263,7 +264,7 @@ class Host:
         self._extract_crypto_material(json_response)
 
 
-    def _random_string(stringLength=10):
+    def _random_string(self, stringLength=10):
         """Generate a random string with the combination of lowercase and uppercase letters """
         letters = string.ascii_letters
         return ''.join(random.choice(letters) for i in range(stringLength))
@@ -300,14 +301,14 @@ class Host:
         if not self._conf.zfs_datasets:
             self._LOG.info("No ZFS datasets found")               
             return ""
-        passwd=_random_string()
+        passwd=self._random_string()
         try:           
             # write password to /dev/shm/zfs.passwd
-             with open('/dev/shm/zfs.passwd', 'w') as the_file:
-                 the_file.write(passwd)
-                 self._LOG.info("Trying to create ZFS datasets")
-                 subprocess.check_call(["sudo", self._conf.zfs_script, "create", self._conf.zfs_datasets])
-             return passwd
+            with open('/dev/shm/zfs.passwd', 'w') as the_file:
+                the_file.write(passwd)
+                self._LOG.info("Trying to create ZFS datasets")
+                subprocess.check_call(["sudo", self._conf.zfs_script, "create", self._conf.zfs_datasets])
+            return passwd
         except Exception, e:
             LOG.error("Error while creating zfs dataset: {0}".format(e))
             sys.exit(13)
