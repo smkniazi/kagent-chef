@@ -52,7 +52,7 @@ function _create {
 	EXISTS=0
 	# cleanup the hopsfs datanode data_dir path
         D=${DIRS[$x]}
-	dn_dir="${D/file:\/\//}   # strip of any leading 'file://'
+	dn_dir="${D/file:\/\//}"   # strip of any leading 'file://'
         dn_dir=$(trim $dn_dir)	 # trim off trailing and leading spaces
         echo "ZFS mount and unlock dataset : $i "
 	# Check if the dataset already exists
@@ -79,7 +79,7 @@ function _create {
                   echo "Keystatus is 'available'"
 		fi
 	    else
-		echo "Dataset $i exists already, but its mountpoint ( $mountpoint ) does not match the supplied mountpoint ( $dn_dir )"
+		echo "Dataset $i exists already, but its mountpoint  $mountpoint  does not match the supplied mountpoint  $dn_dir "
 		exit 12
 	    fi
             echo "ZFS dataset is already mounted and unlocked: $i"

@@ -19,6 +19,7 @@ import json
 import time
 import subprocess
 import string
+import random
 
 from OpenSSL import crypto
 from os.path import join, exists
