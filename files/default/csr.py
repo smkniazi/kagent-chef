@@ -302,13 +302,14 @@ class Host:
         if not self._conf.zfs_datasets:
             self._LOG.info("No ZFS datasets found")               
             return ""
+
         passwd=self._random_string()
         try:           
             # write password to /dev/shm/zfs.passwd
             with open('/dev/shm/zfs.passwd', 'w') as the_file:
                 the_file.write(passwd)
-                self._LOG.info("Trying to create ZFS datasets")
-                subprocess.check_call(["sudo", self._conf.zfs_script, "create", self._conf.zfs_datasets])
+            self._LOG.info("Trying to create ZFS datasets")
+            subprocess.check_call(["sudo", self._conf.zfs_script, "create", self._conf.zfs_datasets])
             return passwd
         except Exception, e:
             LOG.error("Error while creating zfs dataset: {0}".format(e))
