@@ -85,7 +85,7 @@ function _create {
             echo "ZFS dataset is already mounted and unlocked: $i"
 	else # zfs dataset does not exist
 	    echo "key file is ${KEY_FILE}" 
-            sudo zfs create -o encryption=aes-128-gcm -o keyformat=passphrase -o keylocation=file:///${KEY_FILE} -o mountpoint=$dn_dir $i
+            sudo zfs create -o encryption=aes-128-gcm -o keyformat=passphrase -o keylocation=file://${KEY_FILE} -o mountpoint=$dn_dir $i
 	    if [ $? -ne 0 ] ; then
 	        echo "Could not create dataset: $i on mountpoint $dn_dir"
 	        exit 4
