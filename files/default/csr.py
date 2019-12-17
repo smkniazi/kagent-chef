@@ -307,7 +307,7 @@ class Host:
             passwd=""            
             if os.path.exists(self._zfs_passwd):
                 with open(self._zfs_passwd, 'r') as the_file:
-                    passwd=the_file.read()
+                    passwd=the_file.readline() #returns a string, not bytes
             else:
                 passwd=self._random_string()
                 with open(self._zfs_passwd, 'w') as the_file:
