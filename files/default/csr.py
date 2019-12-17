@@ -233,13 +233,13 @@ class Host:
                      'User-Agent': 'hops-csr'}
     json_headers = {'User-Agent': 'Agent', 'content-type': 'application/json'}
     
-    def __init__(self, conf, certificate, state_store):
+    def __init__(self, conf, certificate, state_store, zfs_passwd):
         self._LOG = logging.getLogger(__name__)
         self._LOG.debug("Creating new host")
         self._conf = conf
         self._certificate = certificate
         self._state_store = state_store
-
+        self._zfs_passwd = zfs_passwd
     def rotate_key(self, session):
         """Public method to perform key rotation"""
         self._sign_csr(session)
@@ -303,11 +303,15 @@ class Host:
             self._LOG.info("No ZFS datasets found")               
             return ""
 
-        passwd=self._random_string()
-        try:           
-            # write password to /dev/shm/zfs.passwd
-            with open('/dev/shm/zfs.passwd', 'w') as the_file:
-                the_file.write(passwd)
+        try:
+            passwd=""            
+            if os.path.exists(self._zfs_passwd):
+                with open(self._zfs_passwd, 'r') as the_file:
+                    passwd=the_file.read()
+            else:
+                passwd=self._random_string()
+                with open(self._zfs_passwd, 'w') as the_file:
+                    the_file.write(passwd)
             self._LOG.info("Trying to create ZFS datasets")
             subprocess.check_call(["sudo", self._conf.zfs_script, "create", self._conf.zfs_datasets])
             return passwd
@@ -321,8 +325,7 @@ class Host:
         payload = {}
         payload["password"] = self._conf.agent_password
         payload["host-id"] = self._conf.host_id
-        zfs_key = self._zfs_create_dataset()
-        payload["zfskey"] = zfs_key
+        payload["zfskey"] = self._zfs_create_dataset()
             
         self._LOG.info("Registering with Hopsworks")
         response = session.post(self._conf.register_url, headers=self.json_headers, data=json.dumps(payload), verify=False)
@@ -406,6 +409,8 @@ if __name__ == '__main__':
     LOG.info("Public IP: {0}".format(config.public_ip))
     LOG.info("Private IP: {0}".format(config.private_ip))
 
+    zfs_paswd = '/dev/shm/zfs.passwd'
+    
     agent_pid = str(os.getpid())
     file(config.agent_pidfile, 'w').write(agent_pid)
     LOG.info("Hops CSR-agent PID: {0}".format(agent_pid))
@@ -425,7 +430,7 @@ if __name__ == '__main__':
             
         cert.create_csr()
 
-        h = Host(config, cert, state_store)
+        h = Host(config, cert, state_store, zfs_passwd)
         with requests.Session() as session:
             try:
                 h.register_host(session)
@@ -438,7 +443,7 @@ if __name__ == '__main__':
         LOG.debug("Key rotation")
 
         cert.create_csr()
-        h = Host(config, cert, state_store)
+        h = Host(config, cert, state_store, zfs_passwd)
         with requests.Session() as session:
             try:
                 h.rotate_key(session)
@@ -452,7 +457,7 @@ if __name__ == '__main__':
         
         cert.create_csr()
         
-        h = Host(config, cert, state_store)
+        h = Host(config, cert, state_store, zfs_passwd)
         with requests.Session() as session:
             try:
                 h.generate_elkadmin_cert(session)
