@@ -187,13 +187,14 @@ blacklisted_envs = node['kagent']['python_conda_versions'].split(",").map(&:stri
 # hops-system anaconda env
 blacklisted_envs += ",hops-system,airflow"
 
-
 hopsfs_datadirs=node['install']['dir'] + "/hopsdata"
 if node.attribute?("hops") && node["hops"].attribute?("dn") && node["hops"]["dn"].attribute?("data_dir")
   hopsfs_datadirs=node['hops']['dn']['data_dir']
 end
-
-
+# environment used by Hopsworks Cloud
+unless node['install']['cloud'].strip.empty?
+  blacklisted_envs += ",cloud"
+end
 
 template "#{node["kagent"]["etc"]}/config.ini" do
   source "config.ini.erb"
