@@ -308,10 +308,13 @@ class Host:
             if os.path.exists(self._zfs_passwd):
                 with open(self._zfs_passwd, 'r') as the_file:
                     passwd=the_file.readline() #returns a string, not bytes
+                    if not passwd or len(passwd) != 10 :
+                        passwd=self._random_string()        
             else:
                 passwd=self._random_string()
-                with open(self._zfs_passwd, 'w') as the_file:
-                    the_file.write(passwd)
+
+            with open(self._zfs_passwd, 'w') as the_file:
+                the_file.write(passwd)
             self._LOG.info("Trying to create ZFS datasets")
             subprocess.check_call(["sudo", self._conf.zfs_script, "create", self._conf.zfs_datasets])
             return passwd
