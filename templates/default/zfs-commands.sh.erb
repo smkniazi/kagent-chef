@@ -77,7 +77,7 @@ function _create {
 		    echo "It appears the zpool does not exist: $ZPOOL"
 		    echo "You need to create the zpool first, the re-run Karamel and put the zfs/zpool attribute in your cluster definition file"
 		fi
-		exit 4
+		exit 12
             fi
     
 	fi
@@ -92,7 +92,7 @@ function _load {
 	zfs load-key -a -r -L keylocation=file:///${KEY_FILE} $i
 	if [ $? -ne 0 ] ; then
 	    echo "Could not load key for dataset: $i"
-	    exit 4
+	    exit 8
 	fi
     done
 }
@@ -133,7 +133,7 @@ function _status {
 		zfs load-key -a -r -L keylocation=file:///${KEY_FILE} $i
 		if [ $? -ne 0 ] ; then
 		    echo "Could not load key for dataset: $i"
-		    exit 4
+		    exit 14
 		fi
 	    fi
 
@@ -173,7 +173,7 @@ elif [ "$1" == "status" ] ; then   # returns one of:  empty, created, loaded
     if [ "$RES" == "empty" ] || [ "$RES" == "created" ] || [ "$RES" == "loaded" ] ; then
 	exit 0
     else
-	exit 7
+	exit 17
     fi
 elif [ "$1" == "change-key" ] ; then    
     _changekey
