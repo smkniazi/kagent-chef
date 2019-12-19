@@ -103,7 +103,7 @@ default["kagent"]["python_conda_versions"]         = "2.7, 3.6"
 
 default["zfs"]["days_between_key_rotations"]       = "10"
 # comma-separated list of zfs datasets that we will create encrypted
-default["zfs"]["datasets"]                            = ""  
+default["zfs"]["pool"]                             = ""  
 
 default["kagent"]["certs"]["root_ca"]                   = "#{node["kagent"]["certs_dir"]}/hops_ca.pem"
 default["kagent"]["certs"]["elastic_host_certificate"]  = "#{node["kagent"]["certs_dir"]}/elastic_host.pem"

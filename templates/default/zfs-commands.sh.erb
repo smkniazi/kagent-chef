@@ -21,8 +21,7 @@ KEY_FILE=/dev/shm/zfs.passwd
 DN_DIRS=<%= @hopsfs_datadirs %>
 RES=
 VOLUME=
-DATASETS=
-
+ZPOOL=
 
 #trap "rm -f $KEY_FILE" EXIT
 
@@ -38,16 +37,24 @@ trim() {
 function _create {
     IFS=',' read -r -a DIRS <<< "$DN_DIRS"
     dn_len="${#DN_DIRS[@]}"
-    IFS=',' read -r -a dsets <<< "$DATASETS"    
+
+    dsets=()
+    for i in $(echo $DN_DIRS | sed "s/,/ /g")
+    do
+	name=$(basename -- "$i")
+	dsets+=( "${ZPOOL}/${name}" )  
+    done
+    
     dsets_len="${#dsets[@]}"
 
+    # sanity check
     if [ "$dn_len" != "$dsets_len" ] ; then
 	echo "Error. The number of zfs datasets should be the same as the number of hopsfs datanode data_dirs"
 	exit 11
     fi
     
     x=0
-    for i in $(echo $DATASETS | sed "s/,/ /g")
+    for i in "${dsets[@]}"
     do
 	EXISTS=0
 	# cleanup the hopsfs datanode data_dir path
@@ -173,7 +180,7 @@ if [ "$1" == "create" ] ; then
 	_help
 	exit 2
     fi
-    DATASETS=$2
+    ZPOOL=$2
     _create
 
 elif [ "$1" == "mount" ] ; then
