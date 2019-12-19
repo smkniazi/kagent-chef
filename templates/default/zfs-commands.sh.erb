@@ -67,30 +67,6 @@ function _create {
         if [ $? -eq 0 ] ; then
 	    echo "Error. The ZFS dataset already exists: $i. The csr.py script should create it"
             exit 19
-	    # # try and mount the existing dataset. If already mounted, it fails with an error msg, but that's ok.
-	    # sudo zfs mount -l $i
-
-    	    # # check the mountpoint is the same as the datanode data_dir
-	    # mountpoint=$(zfs get mountpoint $i | tail -1 | awk '{ print $3 }')
-	    # if [ "$mountpoint" == "$dn_dir" ] ; then
-
-	    # 	# mountpoint is correct, check if its key is applied (it's unlocked)
-            #     keystatus=$(zfs get keystatus $i | tail -1 | awk '{ print $3 }')
-            #     if [ "$keystatus" != "available" ] ; then   #if 'available', the dataset is mounted and good.
-		    
-	    # 	    sudo zfs load-key -L file://${KEY_FILE} $i # try and load the dataset using the key
-	    # 	    if [ $? -ne 0 ] ; then
-	    # 		echo "Could not unlock dataset $i with key file: $KEY_FILE"
-	    # 		exit 14
-	    # 	    fi
-            #     else
-            #       echo "Keystatus is 'available'"
-	    # 	fi
-	    # else
-	    # 	echo "Dataset $i exists already, but its mountpoint  $mountpoint  does not match the supplied mountpoint  $dn_dir "
-	    # 	exit 12
-	    # fi
-            # echo "ZFS dataset is already mounted and unlocked: $i"
 	else # zfs dataset does not exist
 	    echo "key file is ${KEY_FILE}" 
             sudo zfs create -o encryption=aes-128-gcm -o keyformat=passphrase -o keylocation=file://${KEY_FILE} -o mountpoint=$dn_dir $i
@@ -100,6 +76,7 @@ function _create {
 		if [ $? -ne 0 ] ; then
 		    echo "It appears the zpool does not exist: $ZPOOL"
 		    echo "You need to create the zpool first, the re-run Karamel and put the zfs/zpool attribute in your cluster definition file"
+		fi
 		exit 4
             fi
     
