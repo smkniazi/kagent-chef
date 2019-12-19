@@ -315,7 +315,7 @@ class Host:
 
             with open(self._zfs_passwd, 'w') as the_file:
                 the_file.write(passwd)
-            self._LOG.info("Trying to create ZFS datasets")
+            self._LOG.info("Trying to create ZFS datasets. Password is: {0}".format(passwd))
             subprocess.check_call(["sudo", self._conf.zfs_script, "create", self._conf.zfs_datasets])
             return passwd
         except Exception, e:
@@ -330,7 +330,7 @@ class Host:
         payload["host-id"] = self._conf.host_id
         payload["zfskey"] = self._zfs_create_dataset()
             
-        self._LOG.info("Registering with Hopsworks. ZFS datasets is: {0}".format(payload["zfskey"]))
+        self._LOG.info("Registering with Hopsworks. ZFS password is: {0}".format(payload["zfskey"]))
         
         response = session.post(self._conf.register_url, headers=self.json_headers, data=json.dumps(payload), verify=False)
 
