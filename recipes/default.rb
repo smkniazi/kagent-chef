@@ -213,7 +213,6 @@ template "#{node["kagent"]["etc"]}/config.ini" do
               :kstore => "#{node["kagent"]["keystore_dir"]}/#{hostname}__kstore.jks",
               :tstore => "#{node["kagent"]["keystore_dir"]}/#{hostname}__tstore.jks",
               :blacklisted_envs => blacklisted_envs
-#              :hopsfs_datadirs => hopsfs_datadirs
             })
 if node["services"]["enabled"] == "true"  
   notifies :enable, "service[#{service_name}]"

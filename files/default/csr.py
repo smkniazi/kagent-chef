@@ -299,8 +299,8 @@ class Host:
 
     def _zfs_create_dataset(self):
         """Public method to create zfs dataset"""
-        if not self._conf.zfs_datasets:
-            self._LOG.info("No ZFS datasets found")               
+        if not self._conf.zfs_pools:
+            self._LOG.info("No ZFS pools found")               
             return ""
 
         try:
@@ -316,7 +316,7 @@ class Host:
             with open(self._zfs_passwd, 'w') as the_file:
                 the_file.write(passwd)
             self._LOG.info("Trying to create ZFS datasets. Password is: {0}".format(passwd))
-            subprocess.check_call(["sudo", self._conf.zfs_script, "create", self._conf.zfs_datasets])
+            subprocess.check_call(["sudo", self._conf.zfs_script, "create", self._conf.zfs_pools])
             return passwd
         except Exception, e:
             LOG.error("Error while creating zfs dataset: {0}".format(e))

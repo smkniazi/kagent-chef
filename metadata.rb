@@ -118,6 +118,6 @@ attribute "zfs/days_between_key_rotations",
           :description => "Number of days between changes to zfs dataset encryption keys",
           :type => "string"
 
-attribute "zfs/pool",
-          :description => "ZFS pool name. ZFS datasets will be created in this pool using the hopsfs data.dirs to store encrypted hopsfs data",
+attribute "zfs/pools",
+          :description => "Comma-separated list of ZFS Pools that will be used to create encrypted datasets to store  Hopsfs blocks",
           :type => "string"

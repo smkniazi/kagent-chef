@@ -21,7 +21,7 @@ KEY_FILE=/dev/shm/zfs.passwd
 DN_DIRS=<%= @hopsfs_datadirs %>
 RES=
 VOLUME=
-ZPOOL=
+ZPOOLS=
 
 #trap "rm -f $KEY_FILE" EXIT
 
@@ -38,25 +38,31 @@ function _create {
     IFS=',' read -r -a DIRS <<< "$DN_DIRS"
     dn_len="${#DN_DIRS[@]}"
 
+    IFS=',' read -r -a POOLS <<< "$ZPOOLS"
+    
     dsets=()
+    x=0
     for i in $(echo $DN_DIRS | sed "s/,/ /g")
     do
 	name=$(basename -- "$i")
-	dsets+=( "${ZPOOL}/${name}" )  
+	dsets+=( "${POOLS[$x]}/${name}" )  
+	((x++))
     done
     
     dsets_len="${#dsets[@]}"
 
     # sanity check
     if [ "$dn_len" != "$dsets_len" ] ; then
-	echo "Error. The number of zfs datasets should be the same as the number of hopsfs datanode data_dirs"
+	echo "Error. The number of zfs/pools attributes should be the same as the number of hops/dn/data_dirs attributes"
 	exit 11
     fi
-    
+
     x=0
     for i in "${dsets[@]}"
     do
 	EXISTS=0
+
+	
 	# cleanup the hopsfs datanode data_dir path
         D=${DIRS[$x]}
 	dn_dir="${D/file:\/\//}"   # strip of any leading 'file://'
@@ -65,16 +71,16 @@ function _create {
 	# Check if the dataset already exists
         zfs list $i
         if [ $? -eq 0 ] ; then
-	    echo "Error. The ZFS dataset already exists: $i. The csr.py script should create it"
+	    echo "Error. The ZFS dataset already exists: $i. The dataset should not exist - it will be created during installation in the supplied zfs pool."
             exit 19
-	else # zfs dataset does not exist
+	else # create the zfs dataset 
 	    echo "key file is ${KEY_FILE}" 
             sudo zfs create -o encryption=aes-128-gcm -o keyformat=passphrase -o keylocation=file://${KEY_FILE} -o mountpoint=$dn_dir $i
 	    if [ $? -ne 0 ] ; then
 	        echo "Could not create dataset: $i on mountpoint $dn_dir"
-                sudo zpool list | grep $ZPOOL
+                sudo zpool list | grep ${POOLS[$x]}
 		if [ $? -ne 0 ] ; then
-		    echo "It appears the zpool does not exist: $ZPOOL"
+		    echo "It appears the zpool does not exist: $${POOLS[$x]}"
 		    echo "You need to create the zpool first, the re-run Karamel and put the zfs/zpool attribute in your cluster definition file"
 		fi
 		exit 12
@@ -161,7 +167,7 @@ if [ "$1" == "create" ] ; then
 	_help
 	exit 2
     fi
-    ZPOOL=$2
+    ZPOOLS=$2
     _create
 
 elif [ "$1" == "mount" ] ; then
