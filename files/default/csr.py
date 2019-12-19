@@ -322,7 +322,7 @@ class Host:
             LOG.error("Error while creating zfs dataset: {0}".format(e))
             sys.exit(13)
         
-
+            
     def _register_host_internal(self, session):
         self._login(session)
         payload = {}
@@ -330,7 +330,8 @@ class Host:
         payload["host-id"] = self._conf.host_id
         payload["zfskey"] = self._zfs_create_dataset()
             
-        self._LOG.info("Registering with Hopsworks")
+        self._LOG.info("Registering with Hopsworks. ZFS datasets is: {0}".format(payload["zfskey"]))
+        
         response = session.post(self._conf.register_url, headers=self.json_headers, data=json.dumps(payload), verify=False)
 
         if (response.status_code != requests.codes.ok):
@@ -339,6 +340,12 @@ class Host:
         
         json_response = json.loads(response.content)
         hadoopHome = json_response["hadoopHome"]
+        # can now delete the zfs password file
+        try:
+            os.remove(self._zfs_passwd)
+        except Exception, e:
+            LOG.warning("Error while removing the zfs password file {0}: {1}".format(self._zfs_passwd, e))
+            
         self._conf.set_conf_value('agent', 'hadoop-home', hadoopHome)
         self._conf.dump_to_file()
 
