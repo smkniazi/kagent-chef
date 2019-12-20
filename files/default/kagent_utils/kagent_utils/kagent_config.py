@@ -83,7 +83,7 @@ class KConfig:
 
 
             self.zfs_script = self._config.get('agent', 'zfs-script')            
-            self.zfs_datasets = self._config.get('agent', 'zfs-datasets')
+            self.zfs_pools = self._config.get('agent', 'zfs-pools')
             self.zfs_days_between_key_rotations = self._config.get('agent', 'zfs-days-between-key-rotations')
 
             
