@@ -478,6 +478,8 @@ class SystemCommandsHandler:
             self._service_key_rotation(command)
         elif op == 'CONDA_GC':
             self._conda_env_garbage_collection(command)
+        elif op == 'ZFS_KEY_ROTATION':
+            self._zfs_key_rotation(command)
         else:
             logger.error("Unknown OP {0} for system command {1}".format(op, command))
 
@@ -521,6 +523,28 @@ class SystemCommandsHandler:
         self._system_commands_status[command['id']] = command
         self._system_commands_status_mutex.release()
 
+    def _zfs_key_rotation(self, command):
+        try:
+            logger.debug("Calling zfs key rotation script")
+            passwd = command['execUser']
+            with open(kconfig.zfs_key_file, 'w') as the_file:
+                the_file.write(passwd)
+
+            subprocess.check_call(["sudo", kconfig.zfs_script, "rotate"])
+            command['status'] = 'FINISHED'
+            logger.info("Successfully rotated the local zfs key")
+        except CalledProcessError as e:
+            logger.error("Error while calling zfs key rotatescript: {0}".format(e))
+            command['status'] = 'FAILED'
+        except Exception as e:
+            logger.error("General error while rotating zfs key {0}".format(e))
+            command['status'] = 'FAILED'
+
+        self._system_commands_status_mutex.acquire()
+        logger.debug("Adding status {0} for command ID {1} - {2}".format(command['status'], command['id'], command))
+        self._system_commands_status[command['id']] = command
+        self._system_commands_status_mutex.release()
+        
 
 class Command:
     def __init__(self, command_type, command):

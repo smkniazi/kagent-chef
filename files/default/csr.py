@@ -419,7 +419,7 @@ if __name__ == '__main__':
     LOG.info("Public IP: {0}".format(config.public_ip))
     LOG.info("Private IP: {0}".format(config.private_ip))
 
-    zfs_passwd = '/dev/shm/zfs.passwd'
+    zfs_passwd = config.zfs_key_file
     
     agent_pid = str(os.getpid())
     file(config.agent_pidfile, 'w').write(agent_pid)

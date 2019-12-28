@@ -6,7 +6,7 @@
 
 function _help {
     echo "Helper script to run zfs commands"
-    echo "Usage: zfs-create.sh [ create | mount | status | change-key ] "
+    echo "Usage: $0 create|mount|status|rotate "
 }
 
 
@@ -16,9 +16,14 @@ then
     exit 2
 fi
 
-KEY_FILE=/dev/shm/zfs.passwd
+# parse kagent config.ini file for the value of zfs-key-file entry
+KEY_FILE=$(awk -F "=" '/zfs-key-file/ {print $2}' <%= node['kagent']['etc'] %>/config.ini | tr -d ' ')
+
+
+#<%= node['zfs']['key_file'] %>
 # datasets are in the format "file:///disks/hdfs/1,file:///disks/hdfs/2, ..."
-DN_DIRS=<%= @hopsfs_datadirs %>
+#DN_DIRS=<%= @hopsfs_datadirs %>
+DN_DIRS=<%= node['hops']['dn']['data_dir'] %>
 RES=
 VOLUME=
 ZPOOLS=
@@ -118,14 +123,34 @@ function _mount {
 }
 
 function _changekey {
+    res=0
+    err=1
+    if [ ! -e ${KEY_FILE} ] ; then
+        echo "File containing new key for ZFS key rotation does not exist."
+	exit 66
+    fi
+
+    while IFS= read -r newkey; do
+	echo "Read new key"
+    done < "${KEY_FILE}"
+
+    len=${#newkey}
+    if [ len -ne 8 ] ; then
+	echo "Invalid new key in $KEY_FILE . It should be 8 characters long."
+	exit 88
+    fi
+    
+    
     for i in $(echo $DATASETS | sed "s/,/ /g")
     do	 
 	zfs change-key -l -o keyformat=passphrase -o keylocation=file:///${KEY_FILE} $i
 	if [ $? -ne 0 ] ; then
-	    echo "Could change key for dataset : $i"
-	    exit 6
+	    echo "Error when rotating key for ZFS dataset : $i"
+            res=$err
 	fi
+	((err++))	
     done
+    return $res
 }
 
 function _status {
@@ -181,8 +206,9 @@ elif [ "$1" == "status" ] ; then   # returns one of:  empty, created, loaded
     else
 	exit 17
     fi
-elif [ "$1" == "change-key" ] ; then    
-    _changekey
+elif [ "$1" == "rotate" ] ; then    
+    RET=_changekey
+    exit $RET
 else
     echo "Invalid command: $1 . Valid commands are: create, status, changekey"
     echo ""

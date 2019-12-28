@@ -190,6 +190,16 @@ blacklisted_envs += ",hops-system,airflow"
 hopsfs_datadirs=node['install']['dir'] + "/hopsdata"
 if node.attribute?("hops") && node["hops"].attribute?("dn") && node["hops"]["dn"].attribute?("data_dir")
   hopsfs_datadirs=node['hops']['dn']['data_dir']
+  dataDir=hopsfs_datadirs.gsub("file://","")
+  dirs = dataDir.split(",")
+  for d in dirs do
+    directory d do
+      owner node['hops']['hdfs']['user']
+      group node['hops']['group']
+      mode "0770"
+      action :create
+    end
+  end
 end
 # environment used by Hopsworks Cloud
 unless node['install']['cloud'].strip.empty?

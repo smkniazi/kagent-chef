@@ -82,10 +82,9 @@ class KConfig:
             self.private_ip = self._config.get('agent', 'private-ip')
 
 
+            self.zfs_key_file = self._config.get('agent', 'zfs-key-file')
             self.zfs_script = self._config.get('agent', 'zfs-script')            
             self.zfs_pools = self._config.get('agent', 'zfs-pools')
-            self.zfs_days_between_key_rotations = self._config.get('agent', 'zfs-days-between-key-rotations')
-
             
             if (self._config.has_option("agent", "hostname")):
                 self.hostname = self._config.get("agent", "hostname")

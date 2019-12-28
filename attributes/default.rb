@@ -105,6 +105,7 @@ default["zfs"]["days_between_key_rotations"]       = "10"
 # comma-separated list of zfs pools that we will use create encrypted datasets on.
 # One zfs pool per hops/dn/data_dir
 default["zfs"]["pools"]                             = ""  
+default["zfs"]["key_file"]                          = "/dev/shm/zfs.key"
 
 default["kagent"]["certs"]["root_ca"]                   = "#{node["kagent"]["certs_dir"]}/hops_ca.pem"
 default["kagent"]["certs"]["elastic_host_certificate"]  = "#{node["kagent"]["certs_dir"]}/elastic_host.pem"
