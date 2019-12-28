@@ -114,10 +114,6 @@ attribute "kagent/python_conda_versions",
           :description => "CSV of python versions to be used as base environments for Anaconda",
           :type => "string"
 
-attribute "zfs/days_between_key_rotations",
-          :description => "Number of days between changes to zfs dataset encryption keys",
-          :type => "string"
-
 attribute "zfs/pools",
           :description => "Comma-separated list of ZFS Pools that will be used to create encrypted datasets to store  Hopsfs blocks",
           :type => "string"

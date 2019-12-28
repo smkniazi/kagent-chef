@@ -192,10 +192,19 @@ if node.attribute?("hops") && node["hops"].attribute?("dn") && node["hops"]["dn"
   hopsfs_datadirs=node['hops']['dn']['data_dir']
   dataDir=hopsfs_datadirs.gsub("file://","")
   dirs = dataDir.split(",")
+  hdfsUser = "hdfs"
+  if node.attribute?("hops") && node["hops"].attribute?("hdfs") && node["hops"]["hdfs"].attribute?("user")
+    hdfsUser = node['hops']['hdfs']['user']
+  end
+  hopsGroup  = "hadoop"
+  if node.attribute?("hops") && node["hops"].attribute?("group")
+    hopsGroup = node['hops']['group']
+  end
+  
   for d in dirs do
     directory d do
-      owner node['hops']['hdfs']['user']
-      group node['hops']['group']
+      owner hdfsUser
+      group hopsGroup
       mode "0770"
       action :create
     end
