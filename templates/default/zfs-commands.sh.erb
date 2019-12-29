@@ -20,9 +20,8 @@ fi
 KEY_FILE=$(awk -F "=" '/zfs-key-file/ {print $2}' <%= node['kagent']['etc'] %>/config.ini | tr -d ' ')
 
 
-#<%= node['zfs']['key_file'] %>
 # datasets are in the format "file:///disks/hdfs/1,file:///disks/hdfs/2, ..."
-#DN_DIRS=<%= @hopsfs_datadirs %>
+# No spaces allowed in this list of directories
 DN_DIRS=<%= node['hops']['dn']['data_dir'] %>
 RES=
 VOLUME=
@@ -40,10 +39,13 @@ trim() {
 }
 
 function _create {
-    IFS=',' read -r -a DIRS <<< "$DN_DIRS"
-    dn_len="${#DN_DIRS[@]}"
 
-    IFS=',' read -r -a POOLS <<< "$ZPOOLS"
+    IFS=',' read -r -a DIRS <<< "$DN_DIRS"
+    dn_len="${#DIRS[@]}"
+
+    # remove spaces from zpool list
+    zpools_clean=$(echo $ZPOOLS | tr -d ' ')
+    IFS=',' read -r -a POOLS <<< "$zpools_clean"
     
     dsets=()
     x=0
