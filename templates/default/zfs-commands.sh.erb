@@ -89,6 +89,7 @@ function _create {
 		if [ $? -ne 0 ] ; then
 		    echo "It appears the zpool does not exist: $${POOLS[$x]}"
 		    echo "You need to create the zpool first, the re-run Karamel and put the zfs/zpool attribute in your cluster definition file"
+		    exit 15
 		fi
 		exit 12
             fi

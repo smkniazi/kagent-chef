@@ -223,8 +223,7 @@ class Heartbeat():
                 payload["agent-time"] = now
                 payload["services"] = services_list
                 payload["recover"] = self._recover
-                payload["zfskey"] = ""
-                payload["zfskey-rotate"] = ""
+                payload["zfskey"] = zfs_key
                 
                 now_in_ms = now * 1000
                 time_to_report = (now_in_ms - self._last_conda_report) > self._conda_report_interval
@@ -298,8 +297,12 @@ class Heartbeat():
                     logger.debug("Response from heartbeat is: {0}".format(theResponse))
                     self._recover = False
                     try:
-                        zfs_key = theResponse['zfskey']
-                        
+                        zfs_key = theResponse['zfsKey']
+                        if zfs_key is not None:
+                            with open(zfs_passwd_file, 'w') as the_file:
+                                the_file.write(zfs_key)
+                                zfs_mount()
+
                         system_commands = theResponse['system-commands']
                         for command in system_commands:
                             c = Command('SYSTEM_COMMAND', command)
@@ -857,6 +860,26 @@ def construct_ordered_services_list(k_config, hw_http_client):
     return host_services
 
 
+def zfs_mount():
+        try:
+            logger.debug("Calling zfs dataset mount script")
+            subprocess.check_call(["sudo", kconfig.zfs_script, "mount"])
+            logger.info("Successfully mounted the local zfs datasets")
+        except CalledProcessError as e:
+            logger.error("Error while calling zfs dataset mount: {0}".format(e))
+        except Exception as e:
+            logger.error("General error while mounting a zfs dataset {0}".format(e))
+
+def zfs_rotate():
+        try:
+            logger.debug("Calling zfs key rotate script")
+            subprocess.check_call(["sudo", kconfig.zfs_script, "rotate"])
+            logger.info("Successfully rotated the local zfs keys")
+        except CalledProcessError as e:
+            logger.error("Error while calling zfs key rotate: {0}".format(e))
+        except Exception as e:
+            logger.error("General error while rotating a zfs key {0}".format(e))
+            
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Hops nodes administration agent')
@@ -867,12 +890,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     verbose = args.verbose
-
-    zfs_key = "request"
-    zfs_key_old_rotate = ""
-    zfs_check_heartbeats = 100
-    zfs_heartbeat_counter = 0
-
     
     global kconfig
     kconfig = KConfig(args.config)
@@ -882,7 +899,16 @@ if __name__ == '__main__':
     setupLogging(kconfig)
     prepare_conda_commands_logger(kconfig)
     readServicesFile()
-        
+
+    zfs_key = "request"
+    zfs_passwd_file = config.zfs_key_file
+    if os.path.exists(zfs_passwd_file):
+        with open(zfs_passwd_file, 'r') as the_file:
+            zfs_key=the_file.readline() 
+
+    if zfs_key != "request":
+        zfs_mount()
+            
     hw_http_client = kagent_utils.Http(kconfig)
 
     if args.services:

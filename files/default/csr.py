@@ -233,13 +233,13 @@ class Host:
                      'User-Agent': 'hops-csr'}
     json_headers = {'User-Agent': 'Agent', 'content-type': 'application/json'}
     
-    def __init__(self, conf, certificate, state_store, zfs_passwd):
+    def __init__(self, conf, certificate, state_store, zfs_passwd_file):
         self._LOG = logging.getLogger(__name__)
         self._LOG.debug("Creating new host")
         self._conf = conf
         self._certificate = certificate
         self._state_store = state_store
-        self._zfs_passwd = zfs_passwd
+        self._zfs_passwd_file = zfs_passwd_file
     def rotate_key(self, session):
         """Public method to perform key rotation"""
         self._sign_csr(session)
@@ -305,15 +305,15 @@ class Host:
 
         try:
             passwd=""            
-            if os.path.exists(self._zfs_passwd):
-                with open(self._zfs_passwd, 'r') as the_file:
+            if os.path.exists(self._zfs_passwd_file):
+                with open(self._zfs_passwd_file, 'r') as the_file:
                     passwd=the_file.readline() #returns a string, not bytes
                     if not passwd or len(passwd) != 10 :
                         passwd=self._random_string()        
             else:
                 passwd=self._random_string()
 
-            with open(self._zfs_passwd, 'w') as the_file:
+            with open(self._zfs_passwd_file, 'w') as the_file:
                 the_file.write(passwd)
             self._LOG.info("Trying to create ZFS datasets. Password is: {0}".format(passwd))
             subprocess.check_call(["sudo", self._conf.zfs_script, "create", self._conf.zfs_pools])
@@ -340,11 +340,12 @@ class Host:
         
         json_response = json.loads(response.content)
         hadoopHome = json_response["hadoopHome"]
+        
         # can now delete the zfs password file
-        try:
-            os.remove(self._zfs_passwd)
-        except Exception, e:
-            LOG.warning("Error while removing the zfs password file {0}: {1}".format(self._zfs_passwd, e))
+        #try:
+        #    os.remove(self._zfs_passwd_file)
+        #except Exception, e:
+        #    LOG.warning("Error while removing the zfs password file {0}: {1}".format(self._zfs_passwd_file, e))
             
         self._conf.set_conf_value('agent', 'hadoop-home', hadoopHome)
         self._conf.dump_to_file()
@@ -419,8 +420,8 @@ if __name__ == '__main__':
     LOG.info("Public IP: {0}".format(config.public_ip))
     LOG.info("Private IP: {0}".format(config.private_ip))
 
-    zfs_passwd = config.zfs_key_file
-    
+    zfs_passwd_file = config.zfs_key_file
+
     agent_pid = str(os.getpid())
     file(config.agent_pidfile, 'w').write(agent_pid)
     LOG.info("Hops CSR-agent PID: {0}".format(agent_pid))
@@ -440,7 +441,7 @@ if __name__ == '__main__':
             
         cert.create_csr()
 
-        h = Host(config, cert, state_store, zfs_passwd)
+        h = Host(config, cert, state_store, zfs_passwd_file)
         with requests.Session() as session:
             try:
                 h.register_host(session)
@@ -453,7 +454,7 @@ if __name__ == '__main__':
         LOG.debug("Key rotation")
 
         cert.create_csr()
-        h = Host(config, cert, state_store, zfs_passwd)
+        h = Host(config, cert, state_store, zfs_passwd_file)
         with requests.Session() as session:
             try:
                 h.rotate_key(session)
@@ -467,7 +468,7 @@ if __name__ == '__main__':
         
         cert.create_csr()
         
-        h = Host(config, cert, state_store, zfs_passwd)
+        h = Host(config, cert, state_store, zfs_passwd_file)
         with requests.Session() as session:
             try:
                 h.generate_elkadmin_cert(session)
