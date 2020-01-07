@@ -297,10 +297,11 @@ class Heartbeat():
                     logger.debug("Response from heartbeat is: {0}".format(theResponse))
                     self._recover = False
                     try:
-                        zfs_key = theResponse['zfsKey']
-                        if zfs_key is not None:
-                            with open(zfs_passwd_file, 'w') as the_file:
-                                the_file.write(zfs_key)
+                        if zfs_key == "request":
+                            zfs_key = theResponse['zfsKey']
+                            if zfs_key is not None:   # and len(zfs_key) == 10
+                                with open(zfs_passwd_file, 'w') as the_file:
+                                    the_file.write(zfs_key)
                                 zfs_mount()
 
                         system_commands = theResponse['system-commands']
@@ -901,13 +902,11 @@ if __name__ == '__main__':
     readServicesFile()
 
     zfs_key = "request"
-    zfs_passwd_file = config.zfs_key_file
+    zfs_passwd_file = kconfig.zfs_key_file
     if os.path.exists(zfs_passwd_file):
         with open(zfs_passwd_file, 'r') as the_file:
             zfs_key=the_file.readline() 
-
-    if zfs_key != "request":
-        zfs_mount()
+            zfs_mount()
             
     hw_http_client = kagent_utils.Http(kconfig)
 
