@@ -63,6 +63,8 @@ conda_ongoing = defaultdict(lambda: False)
 
 cores = multiprocessing.cpu_count()
 
+zfs_key = "request"
+
 def create_log_dir_if_not(kconfig):
     log_dir = kconfig.agent_log_dir
     if not os.path.isdir(log_dir):
@@ -901,7 +903,6 @@ if __name__ == '__main__':
     prepare_conda_commands_logger(kconfig)
     readServicesFile()
 
-    zfs_key = "request"
     zfs_passwd_file = kconfig.zfs_key_file
     if os.path.exists(zfs_passwd_file):
         with open(zfs_passwd_file, 'r') as the_file:
