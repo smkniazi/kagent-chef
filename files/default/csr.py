@@ -270,7 +270,7 @@ class Host:
         self._extract_crypto_material(json_response)
 
 
-    def _random_string(self, stringLength=10):
+    def _random_string(self, stringLength=16):
         """Generate a random string with the combination of lowercase and uppercase letters """
         letters = string.ascii_letters
         return ''.join(random.choice(letters) for i in range(stringLength))
