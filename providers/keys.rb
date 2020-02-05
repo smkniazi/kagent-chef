@@ -1,7 +1,8 @@
 action :csr do
 
   bash "sign-local-csr-key" do
-    user "root"
+    user node['kagent']['certs_user']
+    group node['kagent']['group']
     retries 4
     retry_delay 10
     timeout 300
@@ -14,33 +15,23 @@ action :csr do
     not_if { ::File.exists?( "#{node['kagent']['certs_dir']}/priv.key" ) }
   end
 
-
+  # We need to run the previous block with Kagent group otherwise 
+  # it won't be able to access the configuration file
+  # Now we need to chown the directory to the certs group
   bash "chown-certificates" do
     user "root"
     code <<-EOH
-      set -eo pipefail 
-      cd #{node["kagent"]["certs_dir"]}
-      chown -R root:#{node["kagent"]["certs_group"]} #{node["kagent"]["keystore_dir"]}
-      chown root:#{node["kagent"]["certs_group"]} pub.pem priv.key hops_intermediate_ca.pem hops_root_ca.pem
-      rm -f #{node["kagent"]["base_dir"]}/kagent.pid
+      chmod -R 750 #{node["kagent"]["certs_dir"]}
+      chown -R #{node["kagent"]["certs_user"]}:#{node["kagent"]["certs_group"]} #{node["kagent"]["certs_dir"]}
     EOH
     only_if { ::File.exists?( "#{node['kagent']['certs_dir']}/priv.key" ) }    
   end
-  
-  bash "chown private PKCS#1" do
-    user "root"
-    code <<-EOH
-      set -eo pipefail 
-      chown root:#{node["kagent"]["certs_group"]} #{node["kagent"]["certs_dir"]}/priv.key.rsa
-    EOH
-    only_if { ::File.exists?( "#{node['kagent']['certs_dir']}/priv.key.rsa" ) }
-  end  
-  
 end
 
 action :combine_certs do 
   bash "append hops ca certificates to chef cacerts" do
-    user "root"
+    user "root" 
+    group "root" 
     code <<-EOH
       set -eo pipefail
       echo "Hops Root CA " >>  /opt/chefdk/embedded/ssl/certs/cacert.pem
@@ -54,53 +45,56 @@ action :combine_certs do
     only_if { ::File.exists?( "/opt/chefdk/embedded/ssl/certs/cacert.pem" ) }
   end
 
-  bash "create #{node["kagent"]["certs"]["root_ca"]} by concatenating hops_root_ca and hops_intermediate_ca " do
-    user "root"
-    code <<-EOH
-      set -eo pipefail
-      
-      echo "Hops Root CA " > #{node["kagent"]["certs"]["root_ca"]}
-      echo "==================" >>  #{node["kagent"]["certs"]["root_ca"]}
-      cat #{node["kagent"]["certs_dir"]}/hops_root_ca.pem >> #{node["kagent"]["certs"]["root_ca"]}
-
-      echo "Hops Intermediate CA " >> #{node["kagent"]["certs"]["root_ca"]}
-      echo "==================" >>  #{node["kagent"]["certs"]["root_ca"]}
-      cat #{node["kagent"]["certs_dir"]}/hops_intermediate_ca.pem >>#{node["kagent"]["certs"]["root_ca"]}
-
-      chown root:#{node["kagent"]["certs_group"]} #{node["kagent"]["certs"]["root_ca"]}
-      chmod 640 #{node["kagent"]["certs"]["root_ca"]}
-    EOH
-    not_if { ::File.exists?( node["kagent"]["certs"]["root_ca"] ) }
-  end
-
   bash "create #{node["kagent"]["certs"]["elastic_host_certificate"]} by concatenating pub.pem and hops_intermediate_ca " do
-    user "root"
+    user node['kagent']['certs_user']
+    group node['kagent']['certs_group']
     code <<-EOH
       set -eo pipefail
       cat #{node["kagent"]["certs_dir"]}/pub.pem > #{node["kagent"]["certs"]["elastic_host_certificate"]}
       cat #{node["kagent"]["certs_dir"]}/hops_intermediate_ca.pem >> #{node["kagent"]["certs"]["elastic_host_certificate"]}
 
-      chown root:#{node["kagent"]["certs_group"]} #{node["kagent"]["certs"]["elastic_host_certificate"]}
+      chown #{node['kagent']['certs_user']}:#{node["kagent"]["certs_group"]} #{node["kagent"]["certs"]["elastic_host_certificate"]}
       chmod 640 #{node["kagent"]["certs"]["elastic_host_certificate"]}
     EOH
     not_if { ::File.exists?( node["kagent"]["certs"]["elastic_host_certificate"] ) }
+  end
+
+  # This is normaly done in csr.py during an 'init' or 'rotate' operation. During upgrades, neither happen
+  # so we need to generate it here
+  bash "concatenate Hops Root CA certificate with Hops Intermediate CA certificate into #{node["kagent"]["certs"]["root_ca"]}" do
+    user node["kagent"]["certs_user"]
+    group node["kagent"]["certs_group"]
+    code <<-EOH
+      set -eo pipefail
+      echo "Hops Root CA" > #{node["kagent"]["certs"]["root_ca"]}
+      echo "============" >>  #{node["kagent"]["certs"]["root_ca"]}
+      cat #{node["kagent"]["certs_dir"]}/hops_root_ca.pem >> #{node["kagent"]["certs"]["root_ca"]}
+
+      echo "Hops Intermediate CA" >> #{node["kagent"]["certs"]["root_ca"]}
+      echo "====================" >>  #{node["kagent"]["certs"]["root_ca"]}
+      cat #{node["kagent"]["certs_dir"]}/hops_intermediate_ca.pem >> #{node["kagent"]["certs"]["root_ca"]}
+
+      chmod 750 #{node["kagent"]["certs"]["root_ca"]}
+    EOH
+    not_if { ::File.exists?(node["kagent"]["certs"]["root_ca"]) }
   end
 end 
 
 action :generate_elastic_admin_certificate do
   bash "sign-admin-elastic-key" do
-    user "root"
+    user node['kagent']['certs_user']
+    group node['kagent']['group']
     retries 4
     retry_delay 10
     timeout 300
     code <<-EOF
       set -eo pipefail
       export PYTHON_EGG_CACHE=/tmp
-      #{node[:conda][:base_dir]}/envs/hops-system/bin/python #{node[:kagent][:certs_dir]}/csr.py \
-      -c #{node[:kagent][:etc]}/config.ini elkadmin
-      chown root:#{node["kagent"]["certs_group"]} #{node["kagent"]["certs"]["elastic_admin_key"]}
+      #{node["conda"]["base_dir"]}/envs/hops-system/bin/python #{node["kagent"]["certs_dir"]}/csr.py \
+      -c #{node["kagent"]["etc"]}/config.ini elkadmin
+      chown #{node['kagent']['certs_user']}:#{node["kagent"]["certs_group"]} #{node["kagent"]["certs"]["elastic_admin_key"]}
       chmod 640 #{node["kagent"]["certs"]["elastic_admin_key"]}
-      chown root:#{node["kagent"]["certs_group"]} #{node["kagent"]["certs"]["elastic_admin_certificate"]}
+      chown #{node['kagent']['certs_user']}:#{node["kagent"]["certs_group"]} #{node["kagent"]["certs"]["elastic_admin_certificate"]}
       chmod 640 #{node["kagent"]["certs"]["elastic_admin_certificate"]}
     EOF
     not_if { ::File.exists?( node["kagent"]["certs"]["elastic_admin_key"] ) }

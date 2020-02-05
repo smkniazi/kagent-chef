@@ -67,13 +67,16 @@ class KConfig:
             self.services_file = self._config.get('agent', 'services-file')
             self.watch_interval = self._config.get('agent', 'watch-interval')
             self.bin_dir = self._config.get('agent', 'bin-dir')
+            self.sbin_dir = self._config.get('agent', 'sbin-dir')
             self.group_name = self._config.get('agent', 'group-name')
             self.hadoop_home = self._config.get('agent', 'hadoop-home')
             self.certs_dir = self._config.get('agent', 'certs-dir')
+            self.certs_user = self._config.get('agent', 'certs-user')
             self.state_store_location = self._config.get(
                 'agent', 'state-store')
             self.agent_password = self._config.get('agent', 'password')
             self.conda_dir = self._config.get('agent', 'conda-dir')
+            self.conda_user = self._config.get('agent', 'conda-user')
             self.conda_envs_blacklist = self._config.get(
                 'agent', 'conda-envs-blacklist')
             self.conda_gc_interval = self._config.get(
@@ -106,6 +109,7 @@ class KConfig:
             self.elk_certificate_file = self._config.get('agent', 'elk-certificate-file')
             self.elk_cn = self._config.get('agent', 'elk-cn')
             self.elastic_host_certificate = self._config.get('agent', 'elastic-host-certificate')
+            self.hops_ca_cert_file = self._config.get('agent', 'hops_ca-cert-file')
         except Exception, e:
             print("Exception while reading {0}: {1}".format(
                 self._configFile, e))

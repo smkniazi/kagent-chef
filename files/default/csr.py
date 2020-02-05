@@ -123,6 +123,16 @@ class Certificate:
                 target.write(self._certificate)
                 target.write(self._intermediate_ca)
 
+        # Write Hops CA file
+        if self._intermediate_ca is not None and self._root_ca is not None:
+            with open(self._config.hops_ca_cert_file, "wt") as fd:
+                fd.write("Hops Root CA\n")
+                fd.write("============\n")
+                fd.write(self._root_ca)
+                fd.write("Hops Intermediate CA\n")
+                fd.write("====================\n")
+                fd.write(self._intermediate_ca)
+
         self._LOG.info("Flushed crypto material to filesystem")
         
     def _generate_key(self):
@@ -340,6 +350,7 @@ class Host:
         response = session.post(self._conf.register_url, headers=self.json_headers, data=json.dumps(payload), verify=False)
 
         if (response.status_code != requests.codes.ok):
+<<<<<<< HEAD
             raise Exception('Could not register: Unknown host id or internal error on the dashboard (Status code: {0} - {1}).'
                             .format(response.status_code, response.text))
         
@@ -354,6 +365,9 @@ class Host:
             
         self._conf.set_conf_value('agent', 'hadoop-home', hadoopHome)
         self._conf.dump_to_file()
+=======
+            raise Exception('Could not register: Unknown host id or internal error on the dashboard (Status code: {0} - {1}).'.format(response.status_code, response.text))
+>>>>>>> 984da062488d8edaa30e6728789ea786e0bb4662
 
     def _store_new_crypto_state(self):
         previous_crypto_version = self._state_store.get_crypto_material_state().get_version()
@@ -425,12 +439,15 @@ if __name__ == '__main__':
     LOG.info("Public IP: {0}".format(config.public_ip))
     LOG.info("Private IP: {0}".format(config.private_ip))
 
+<<<<<<< HEAD
     zfs_passwd_file = config.zfs_key_file
 
     agent_pid = str(os.getpid())
     file(config.agent_pidfile, 'w').write(agent_pid)
     LOG.info("Hops CSR-agent PID: {0}".format(agent_pid))
 
+=======
+>>>>>>> 984da062488d8edaa30e6728789ea786e0bb4662
     LOG.info("Restoring state from state-store")
     state_store_factory = StateStoreFactory(config.state_store_location)
     state_store = state_store_factory.get_instance('file')

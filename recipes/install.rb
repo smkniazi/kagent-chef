@@ -21,15 +21,7 @@ end
 
 case node["platform_family"]
 when "debian"
-  bash "apt_update_install_build_tools" do
-    user "root"
-    code <<-EOF
-   apt-get update -y 
-   apt-get install build-essential -y 
-   apt-get install libssl-dev -y 
-   apt-get install jq -y 
- EOF
-  end
+  package ["python2.7", "python2.7-dev", "build-essential", "libssl-dev", "jq"]
 
 # Change lograte policy
   cookbook_file '/etc/logrotate.d/rsyslog' do
@@ -39,9 +31,6 @@ when "debian"
     mode '0644'
   end
 
-  package "python2.7" 
-  package "python2.7-dev"
-
 when "rhel"
 
   if node['rhel']['epel'].downcase == "true"
@@ -49,16 +38,8 @@ when "rhel"
   end
 
 # gcc, gcc-c++, kernel-devel are the equivalent of "build-essential" from apt.
-  package "gcc"
-  package "gcc-c++"
-  package "kernel-devel" 
-  package "openssl"
-  package "openssl-devel"
-  package "openssl-libs" 
-  package "python" 
-  package "python-pip" 
-  package "python-devel" 
-  package "jq"
+  package ["gcc", "gcc-c++", "kernel-devel", "openssl", "openssl-devel", "openssl-libs", "python", "python-pip", "python-devel", "jq"]
+
   # Change lograte policy
   cookbook_file '/etc/logrotate.d/syslog' do
     source 'syslog.centos'
@@ -67,13 +48,6 @@ when "rhel"
     mode '0644'
   end
 end
-
-
-#installs python 2
-# include_recipe "poise-python"
-# The openssl::upgrade recipe doesn't install openssl-dev/libssl-dev, needed by python-ssl
-# Now using packages in ubuntu/centos.
-#include_recipe "openssl::upgrade"
 
 group node["kagent"]["group"] do
   action :create
@@ -84,6 +58,16 @@ end
 group node["kagent"]["certs_group"] do
   action :create
   not_if "getent group #{node["kagent"]["certs_group"]}"
+  not_if { node['install']['external_users'].casecmp("true") == 0 }
+end
+
+user node["kagent"]["certs_user"] do
+  gid node["kagent"]["certs_group"]
+  action :create
+  manage_home false 
+  system true
+  shell "/bin/nologin"
+  not_if "getent passwd #{node["kagent"]["certs_user"]}"
   not_if { node['install']['external_users'].casecmp("true") == 0 }
 end
 
@@ -100,7 +84,8 @@ end
 
 group node["kagent"]["group"] do
   action :modify
-  members ["#{node["kagent"]["user"]}"]
+  # Certs user is in the kagnet group so it can also modify the Kagent state store. 
+  members [node["kagent"]["user"], node["kagent"]["certs_user"]]
   append true
   not_if { node['install']['external_users'].casecmp("true") == 0 }
 end
@@ -151,7 +136,7 @@ end
 directory "#{node["kagent"]["etc"]}/state_store" do
   owner node["kagent"]["user"]
   group node["kagent"]["group"]
-  mode "700"
+  mode "770"
   action :create
   not_if { File.directory?("#{node["kagent"]["etc"]}/state_store") }
 end
@@ -164,7 +149,7 @@ directory node["kagent"]["home"] do
 end
 
 directory node["kagent"]["certs_dir"] do
-  owner node["kagent"]["user"]
+  owner node["kagent"]["certs_user"]
   group node["kagent"]["certs_group"]
   mode "750"
   action :create
@@ -184,7 +169,7 @@ directory "#{node["kagent"]["home"]}/bin" do
 end
 
 directory node["kagent"]["keystore_dir"] do
-  owner "root"
+  owner node["kagent"]["certs_user"]
   group node["kagent"]["certs_group"]
   mode "750"
   action :create
@@ -218,55 +203,12 @@ cookbook_file "#{node["kagent"]["home"]}/agent.py" do
   mode 0710
 end
 
-## Touch cssr script log file as kagent user, so agent.py can write to it
-file "#{node["kagent"]["dir"]}/csr.log" do
-  mode '0750'
-  owner node["kagent"]["user"]
-  group node["kagent"]["group"]
-  action :touch
-end
-
 cookbook_file "#{node["kagent"]["certs_dir"]}/csr.py" do
   source 'csr.py'
-  owner node["kagent"]["user"]
+  owner node["kagent"]["certs_user"]
   group node["kagent"]["certs_group"]
   mode 0710
 end
-
-template "#{node["kagent"]["certs_dir"]}/run_csr.sh" do
-  source 'run_csr.sh.erb'
-  owner node['kagent']['user']
-  group node['kagent']['group']
-  mode 0710
-end
-
-template "#{node["kagent"]["home"]}/run_csr.sh" do
-  source 'run_csr.sh.erb'
-  owner node['kagent']['user']
-  group node['kagent']['group']
-  mode 0710
-end
-
-
-['start-agent.sh', 'stop-agent.sh', 'restart-agent.sh', 'get-pid.sh'].each do |script|
-  Chef::Log.info "Installing #{script}"
-  template "#{node["kagent"]["home"]}/bin/#{script}" do
-    source "#{script}.erb"
-    owner node["kagent"]["user"]
-    group node["kagent"]["group"]
-    mode 0750
-  end
-end 
-
-['status-service.sh', 'gpu-kill.sh', 'gpu-killhard.sh'].each do |script|
-  template  "#{node["kagent"]["home"]}/bin/#{script}" do
-    source "#{script}.erb"
-    owner "root"
-    group node["kagent"]["group"]
-    mode 0750
-  end
-end
-
 
 hopsfs_datadirs=node['install']['dir'] + "/hopsdata/hdfs/dn"
 if node.attribute?("hops") && node["hops"].attribute?("dn") && node["hops"]["dn"].attribute?("data_dir")
@@ -283,83 +225,14 @@ template  "#{node['kagent']['home']}/bin/zfs-commands.sh" do
            })
 end
 
-
-
-# set_my_hostname
-if node["vagrant"] === "true" || node["vagrant"] == true 
-    node[:kagent][:default][:private_ips].each_with_index do |ip, index| 
-      hostsfile_entry "#{ip}" do
-        hostname  "hopsworks#{index}"
-        action    :create
-        unique    true
-      end
-    end
-end
-
-jupyter_python = "true"
-if node.attribute?("jupyter") 
-  if node["jupyter"].attribute?("python") 
-    jupyter_python = "#{node['jupyter']['python']}".downcase
+for pool in node["zfs"]["pools"] do
+  
+  bash "zfs_give_kagent_permissions" do
+    user "root"
+    code <<-EOF
+      zpool set delegation=on #{pool}
+      zfs allow #{node["kagent"]["user"]}, mount,change-key,create tank
+    EOF
   end
+
 end
-
-hadoop_version = "2.8.2.3"
-if node.attribute?("hops") 
-  if node["hops"].attribute?("version") 
-    hadoop_version = node['hops']['version']
-  end
-end
-
-
-template "#{node["kagent"]["home"]}/bin/conda.sh" do
-  source "conda.sh.erb"
-  owner node["kagent"]["user"]
-  group node["kagent"]["group"]
-  mode "750"
-  action :create
-end
-
-template "#{node["kagent"]["home"]}/bin/anaconda_env.sh" do
-  source "anaconda_env.sh.erb"
-  owner node["kagent"]["user"]
-  group node["kagent"]["group"]
-  mode "750"
-  action :create
-  variables({
-        :jupyter_python => jupyter_python
-  })
-end
-
-template "#{node["kagent"]["home"]}/bin/anaconda_sync.sh" do
-  source "anaconda_sync.sh.erb"
-  owner node["kagent"]["user"]
-  group node["kagent"]["group"]
-  mode "750"
-  action :create
-end
-
-ruby_block "whereis_systemctl" do
-  block do
-    Chef::Resource::RubyBlock.send(:include, Chef::Mixin::ShellOut)
-    systemctl_path = shell_out("which systemctl").stdout
-    node.override['kagent']['systemctl_path'] = systemctl_path.strip
-  end
-end
-
-template "/etc/sudoers.d/kagent" do
-  source "sudoers.erb"
-  owner "root"
-  group "root"
-  mode "0440"
-  variables({
-                :user => node["kagent"]["user"],
-                :conda =>  "#{node['kagent']['base_dir']}/bin/conda.sh",
-                :anaconda =>  "#{node['kagent']['base_dir']}/bin/anaconda_env.sh",
-                :rotate_service_key => "#{node[:kagent][:certs_dir]}/run_csr.sh",
-                :gpu_kill => "#{node['kagent']['base_dir']}/bin/gpu-kill.sh",
-                :gpu_killhard => "#{node['kagent']['base_dir']}/bin/gpu-killhard.sh",
-                :systemctl_path => lazy { node['kagent']['systemctl_path'] },
-                :zfs_commands => "#{node['kagent']['base_dir']}/bin/zfs-commands.sh"
-              })
-  action :create
-end  
