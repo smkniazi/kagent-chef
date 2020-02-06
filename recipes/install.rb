@@ -225,14 +225,14 @@ template  "#{node['kagent']['home']}/bin/zfs-commands.sh" do
            })
 end
 
-for pool in node["zfs"]["pools"] do
-  
+
+pools = node["zfs"]["pools"].split(",")
+for pool in pools do 
   bash "zfs_give_kagent_permissions" do
     user "root"
     code <<-EOF
       zpool set delegation=on #{pool}
-      zfs allow #{node["kagent"]["user"]}, mount,change-key,create tank
+      zfs allow #{node["kagent"]["user"]}, mount,change-key,create #{pool}
     EOF
   end
-
 end
