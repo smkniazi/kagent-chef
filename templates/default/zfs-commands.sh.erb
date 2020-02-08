@@ -82,10 +82,10 @@ function _create {
             exit 19
 	else # create the zfs dataset 
 	    echo "key file is ${KEY_FILE}" 
-            sudo zfs create -o encryption=aes-128-gcm -o keyformat=passphrase -o keylocation=file://${KEY_FILE} -o mountpoint=$dn_dir $i
+            zfs create -o encryption=aes-128-gcm -o keyformat=passphrase -o keylocation=file://${KEY_FILE} -o mountpoint=$dn_dir $i
 	    if [ $? -ne 0 ] ; then
 	        echo "Could not create dataset: $i on mountpoint $dn_dir"
-                sudo zpool list | grep ${POOLS[$x]}
+                zpool list | grep ${POOLS[$x]}
 		if [ $? -ne 0 ] ; then
 		    echo "It appears the zpool does not exist: $${POOLS[$x]}"
 		    echo "You need to create the zpool first, the re-run Karamel and put the zfs/zpool attribute in your cluster definition file"
