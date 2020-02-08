@@ -430,10 +430,6 @@ if __name__ == '__main__':
 
     zfs_passwd_file = config.zfs_key_file
 
-    agent_pid = str(os.getpid())
-    file(config.agent_pidfile, 'w').write(agent_pid)
-    LOG.info("Hops CSR-agent PID: {0}".format(agent_pid))
-
     LOG.info("Restoring state from state-store")
     state_store_factory = StateStoreFactory(config.state_store_location)
     state_store = state_store_factory.get_instance('file')
