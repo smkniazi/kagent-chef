@@ -82,7 +82,7 @@ function _create {
             exit 19
 	else # create the zfs dataset 
 	    echo "key file is ${KEY_FILE}" 
-            zfs create -o encryption=aes-128-gcm -o keyformat=passphrase -o keylocation=file://${KEY_FILE} -o mountpoint=$dn_dir $i
+            sudo zfs create -o encryption=aes-128-gcm -o keyformat=passphrase -o keylocation=file://${KEY_FILE} -o mountpoint=$dn_dir $i
 	    if [ $? -ne 0 ] ; then
 	        echo "Could not create dataset: $i on mountpoint $dn_dir"
                 zpool list | grep ${POOLS[$x]}
@@ -117,7 +117,7 @@ function _mount {
     
     for i in $(echo $DATASETS | sed "s/,/ /g")
     do
-	zfs mount $i
+	sudo zfs mount $i
 	if [ $? -ne 0 ] ; then
 	    echo "Could mount dataset: $i"
 	    exit 5
@@ -173,7 +173,7 @@ function _status {
 
             mounted=$(zfs get mounted $i | tail -1 | awk '{ print $3 }')
             if [ "$mounted" == "no" ] ; then  
-		zfs mount $i
+		sudo zfs mount $i
 		if [ $? -ne 0 ] ; then
 		    exit 6
 		fi
