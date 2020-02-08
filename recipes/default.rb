@@ -361,12 +361,6 @@ template "#{node["kagent"]["certs_dir"]}/keystore.sh" do
   variables({:fqdn => hostname})
 end
 
-file "/dev/shm/zfs.passwd" do
-  owner node['kagent']['user']
-  mode '0600'
-  action :create
-end
-
 if node["kagent"]["test"] == false && (not conda_helpers.is_upgrade)
     kagent_keys "sign-certs" do
        action :csr

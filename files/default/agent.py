@@ -533,7 +533,7 @@ class SystemCommandsHandler:
             with open(kconfig.zfs_key_file, 'w') as the_file:
                 the_file.write(passwd)
 
-            subprocess.check_call([kconfig.zfs_script, "rotate"])
+            subprocess.check_call(["sudo", kconfig.zfs_script, "rotate"])
             command['status'] = 'FINISHED'
             logger.info("Successfully rotated the local zfs key")
         except CalledProcessError as e:
@@ -863,7 +863,7 @@ def construct_ordered_services_list(k_config, hw_http_client):
 def zfs_mount():
         try:
             logger.debug("Calling zfs dataset mount script")
-            subprocess.check_call([kconfig.zfs_script, "mount"])
+            subprocess.check_call(["sudo", kconfig.zfs_script, "mount"])
             logger.info("Successfully mounted the local zfs datasets")
         except CalledProcessError as e:
             logger.error("Error while calling zfs dataset mount: {0}".format(e))
@@ -873,7 +873,7 @@ def zfs_mount():
 def zfs_rotate():
         try:
             logger.debug("Calling zfs key rotate script")
-            subprocess.check_call([kconfig.zfs_script, "rotate"])
+            subprocess.check_call(["sudo", kconfig.zfs_script, "rotate"])
             logger.info("Successfully rotated the local zfs keys")
         except CalledProcessError as e:
             logger.error("Error while calling zfs key rotate: {0}".format(e))

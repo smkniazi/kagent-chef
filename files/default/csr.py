@@ -331,7 +331,7 @@ class Host:
             with open(self._zfs_passwd_file, 'w') as the_file:
                 the_file.write(passwd)
             self._LOG.info("Trying to create ZFS datasets. Password is: {0}".format(passwd))
-            subprocess.check_call([self._conf.zfs_script, "create", self._conf.zfs_pools])
+            subprocess.check_call(["sudo", self._conf.zfs_script, "create", self._conf.zfs_pools])
             return passwd
         except Exception, e:
             LOG.error("Error while creating zfs dataset: {0}".format(e))

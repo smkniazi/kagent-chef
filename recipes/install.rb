@@ -232,7 +232,23 @@ for pool in pools do
     user "root"
     code <<-EOF
       zpool set delegation=on #{pool}
-      zfs allow #{node["kagent"]["user"]}, mount,change-key,create,load-key #{pool}
+      zfs allow #{node["kagent"]["user"]}, mount,change-key,create,load-key,destroy #{pool}
+      zfs allow #{node["kagent"]["certs_user"]}, mount,change-key,create,load-key,destroy #{pool}
     EOF
+  end
+end
+
+
+if node["zfs"]["pools"].empty? == false
+  template "/etc/sudoers.d/kagent" do
+    source "sudoers.erb"
+    owner "root"
+    group "root"
+    mode "0440"
+    variables({
+                :user => node["kagent"]["user"],
+                :zfs_commands => "#{node['kagent']['base_dir']}/bin/zfs-commands.sh"
+                 })
+    action :create
   end
 end
