@@ -232,7 +232,7 @@ for pool in pools do
     user "root"
     code <<-EOF
       zpool set delegation=on #{pool}
-      zfs allow #{node["kagent"]["user"]}, mount,change-key,create,list,load-key,get #{pool}
+      zfs allow #{node["kagent"]["user"]}, mount,change-key,create,load-key #{pool}
     EOF
   end
 end
