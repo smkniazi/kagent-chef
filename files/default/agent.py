@@ -148,7 +148,7 @@ class Heartbeat():
         self._last_conda_report = long(time.mktime(datetime.now().timetuple()) * 1000)
         self._host_services = host_services
         self._recover = True
-        self._zfskey = zfs_key
+        self._zfs_key = zfs_key
         
         while True:
             self.send()
