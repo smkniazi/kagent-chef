@@ -63,8 +63,6 @@ conda_ongoing = defaultdict(lambda: False)
 
 cores = multiprocessing.cpu_count()
 
-zfs_key = "request"
-
 def create_log_dir_if_not(kconfig):
     log_dir = kconfig.agent_log_dir
     if not os.path.isdir(log_dir):
@@ -138,7 +136,7 @@ class Heartbeat():
     daemon_threads = True
     def __init__(self, commands_queue, system_commands_status, system_commands_status_mutex,
                  conda_commands_status, conda_commands_status_mutex, conda_report_interval,
-                 conda_envs_monitor_list, host_services):
+                 conda_envs_monitor_list, host_services, zfs_key):
         self._commands_queue = commands_queue
         self._system_commands_status = system_commands_status
         self._system_commands_status_mutex = system_commands_status_mutex
@@ -150,7 +148,7 @@ class Heartbeat():
         self._last_conda_report = long(time.mktime(datetime.now().timetuple()) * 1000)
         self._host_services = host_services
         self._recover = True
-        self._zfskey = ""
+        self._zfskey = zfs_key
         
         while True:
             self.send()
@@ -225,7 +223,7 @@ class Heartbeat():
                 payload["agent-time"] = now
                 payload["services"] = services_list
                 payload["recover"] = self._recover
-                payload["zfskey"] = zfs_key
+                payload["zfskey"] = self._zfs_key
                 
                 now_in_ms = now * 1000
                 time_to_report = (now_in_ms - self._last_conda_report) > self._conda_report_interval
@@ -299,12 +297,14 @@ class Heartbeat():
                     logger.debug("Response from heartbeat is: {0}".format(theResponse))
                     self._recover = False
                     try:
-                        if zfs_key == "request":
-                            zfs_key = theResponse['zfsKey']
+                        if self._zfs_key == "request":
+                            self._zfs_key = theResponse['zfsKey']
                             if zfs_key is not None:   # and len(zfs_key) == 10
                                 with open(zfs_passwd_file, 'w') as the_file:
                                     the_file.write(zfs_key)
                                 zfs_mount()
+                            else:
+                                self._zfs_key = ""
 
                         system_commands = theResponse['system-commands']
                         for command in system_commands:
@@ -907,7 +907,7 @@ if __name__ == '__main__':
             zfs_mount()
             
     hw_http_client = kagent_utils.Http(kconfig)
-
+    
     if args.services:
         ordered_host_services = construct_ordered_services_list(kconfig, hw_http_client)
         if args.services == 'start':
@@ -961,6 +961,9 @@ if __name__ == '__main__':
     conda_commands_status_mutex = Lock()
     conda_commands_handler = CondaCommandsHandler(conda_commands_status, conda_commands_status_mutex)
 
+    # On startup of kagent, request the zfs key from Hopsworks to mount any ZFS encrypted datasets
+    zfs_key = "request"
+    
     ## Start commands handler thread
     commands_handler = Handler(commands_queue, system_commands_handler, conda_commands_handler)
     commands_handler.setDaemon(True)
@@ -969,7 +972,7 @@ if __name__ == '__main__':
     ## Start heartbeat thread
     hb_thread = threading.Thread(target=Heartbeat, args=(commands_queue, system_commands_status, system_commands_status_mutex,
                                                          conda_commands_status, conda_commands_status_mutex, conda_report_interval,
-                                                         conda_envs_monitor_list, host_services))
+                                                         conda_envs_monitor_list, host_services, zfs_key))
     hb_thread.setDaemon(True)
     hb_thread.start()
 
