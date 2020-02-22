@@ -128,20 +128,17 @@ module Kagent
       require 'resolv'
       hostf = Resolv::Hosts.new
       dns = Resolv::DNS.new
-
-      # Try and resolve the IP first using /etc/hosts, then using DNS
+      # Try and resolve hostname first using /etc/hosts, then use DNS
       begin
-        hname = hostf.getname(ip)
+        hostname = hostf.getname(ip)
       rescue
         begin
           hostname = dns.getname(ip)
-          hname = hostname.to_s
         rescue
           raise "Cannot resolve the hostname for IP address: #{ip}"
         end
       end
     end
-      
     
     def private_recipe_hostnames(cookbook, recipe)
       valid_recipe(cookbook,recipe)
