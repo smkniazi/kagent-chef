@@ -128,14 +128,22 @@ module Kagent
       require 'resolv'
       hostf = Resolv::Hosts.new
       dns = Resolv::DNS.new
-      # Try and resolve hostname first using /etc/hosts, then use DNS
-      begin
-        hostname = hostf.getname(ip)
-      rescue
+
+      # Hosts in Azure will have 2 hostnames - a global one and a private DNS one.
+      if node['install']['cloud'] == "azure"
+        hostnames = dns.getnames(ip)
+        # return the last of the hostnames - this is the private DNS Zone hostname in Azure
+        hostname = hostnames[-1]
+      else  
+        # Try and resolve hostname first using /etc/hosts, then use DNS
         begin
-          hostname = dns.getname(ip)
+          hostname = hostf.getname(ip)
         rescue
-          raise "Cannot resolve the hostname for IP address: #{ip}"
+          begin
+            hostname = dns.getname(ip)
+          rescue
+            raise "Cannot resolve the hostname for IP address: #{ip}"
+          end
         end
       end
     end
