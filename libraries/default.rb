@@ -130,7 +130,7 @@ module Kagent
       dns = Resolv::DNS.new
       # Hosts in Azure will have 2 hostnames - a global one and a private DNS one.
       if node['install']['cloud'].eql? "azure"
-        hostnames = dns.getnames(ip)
+        hostnames = Resolv.getnames(ip)
         hostnames=hostnames.reject { |x| x.include?(".internal.cloudapp.net") }
         # return the last of the hostnames - this is the private DNS Zone hostname in Azure
         hostname = hostnames[-1]
